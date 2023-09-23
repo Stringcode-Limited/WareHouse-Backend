@@ -12,7 +12,7 @@ export const createProduct = async (req, res) => {
       price,
       quantity,
       category,
-      availability,
+      availability: "Available",
       expirationDate,
       barcode,
       weight,
@@ -59,7 +59,10 @@ export const getAllCategories = async (req, res) => {
         },
       ]);
   
-      res.json(categories[0].categories);
+       res.json({
+            status: "Success",
+            data: categories[0].categories
+        });
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: "Internal Server Error" });
@@ -71,14 +74,36 @@ export const getAllCategories = async (req, res) => {
     try {
       const productName = req.params.productName;
       const product = await ProductModel.findOne({ name: productName });
-  
       if (!product) {
         return res.status(404).json({ error: "Product not found" });
       }
-  
-      res.json(product);
+      res.json({
+        status: "Success",
+        data: product
+    });
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
+
+export const getAvailableProductsByCategory = async (req, res) => {
+  try {
+    const category = req.params.category;
+    const products = await ProductModel.find({
+      category: category,
+      availability: "Available",
+    });
+    if (products.length === 0) {
+      return res.json({ message: "No available products" });
+    }
+    res.json({
+        status: "Success",
+        data: products
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
