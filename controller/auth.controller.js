@@ -1,5 +1,5 @@
 import UserModel from "../models/user.model.js";
-import { bcrypt } from "bcrypt";
+import bcrypt from "bcrypt";
 
 export const RegisterAdmin = async (req, res) => {
   try {
@@ -24,6 +24,24 @@ export const RegisterAdmin = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+
+export const uploadProfilePicture = async (req, res) => {
+  try {
+      const { email } = req.body;
+      const profilePictureUrl = req.file.path;
+      const user = await UserModel.findOne({ email });
+      if (!user) {
+        return res.status(404).json({ message: "User not found." });
+      }
+      user.profileImage = profilePictureUrl;
+      await user.save();
+      res.status(200).json({ message: "Registration completed successfully." });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Internal Server Error" });
+    }
+}
 
 
 export const AdminLogIn = async (req, res) => {
@@ -59,6 +77,7 @@ export const AdminLogIn = async (req, res) => {
     }
   };    
 
+
   export const updatePassword = async (req,res)=>{
     try {
         const { currentPassword, newPassword } = req.body;
@@ -81,3 +100,26 @@ export const AdminLogIn = async (req, res) => {
         res.status(500).json({ message: "Internal Server Error" });
       }
   }
+
+  export const updateUser = async (req, res) => {
+    try {
+      const userId = req.userAuth;
+      const updatedFields = req.body;
+      const user = await UserModel.findByIdAndUpdate(
+        userId,
+        updatedFields,
+        { new: true }
+      );
+      if (!user) {
+        return res.status(404).json({ message: "User not found." });
+      }
+      res.json({
+        status: "Success",
+        data: user,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Internal Server Error" });
+    }
+  };
+  

@@ -22,7 +22,10 @@ const userSchema = new mongoose.Schema({
     },
     lastLogin: {
         type: Date,
-      },
+    },
+    profileImage: {
+        type: String,
+    }
 })
 
 const UserModel = mongoose.model("User", userSchema)
