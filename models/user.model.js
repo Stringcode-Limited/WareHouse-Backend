@@ -13,12 +13,16 @@ const userSchema = new mongoose.Schema({
     password: {
         type: String,
         required: true,
+        default: "X0X0"
     },
     role: {
         type: String,
         enum: ['Admin', 'User'],
         default: 'User'
     },
+    lastLogin: {
+        type: Date,
+      },
 })
 
 const UserModel = mongoose.model("User", userSchema)

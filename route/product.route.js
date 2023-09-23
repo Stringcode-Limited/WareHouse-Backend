@@ -1,6 +1,8 @@
 import express from 'express';
 import multer from 'multer';
-import { createProduct, getAllCategories, getAvailableProductsByCategory, getProductByName, updateProduct } from '../controller/product.controller.js';
+import { createProduct, getAllCategories, getAvailableProductsByCategory, getByBarcode, getByExpiration, getByManufacturer, getProductByName, updateProduct } from '../controller/product.controller.js';
+import { isAdmin } from './../middleware/admin.js';
+import { loggedIn } from './../middleware/loginAccess.js';
 
 const productRouter = express.Router();
 const storage = multer.diskStorage({
@@ -11,14 +13,20 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-productRouter.post('/create', upload.single('image'), createProduct);
+productRouter.post('/create', upload.single('image'), loggedIn, isAdmin , createProduct);
 
 productRouter.get('/getAll', getAllCategories);
 
 productRouter.get('/get/:productName', getProductByName);
 
-productRouter.get('/available/:category', getAvailableProductsByCategory);
+productRouter.get('/available/:category', loggedIn, isAdmin , getAvailableProductsByCategory);
 
-productRouter.put('/update/:productId', updateProduct);
+productRouter.put('/update/:productId', loggedIn, isAdmin, updateProduct);
+
+productRouter.get('/manufacturer/:manufacturer', loggedIn, isAdmin , getByManufacturer);
+
+productRouter.get("/expiration/:expirationDate", loggedIn, isAdmin , getByExpiration);
+
+productRouter.get("/barcode/:barcode", loggedIn, isAdmin , getByBarcode);
 
 export default productRouter;
