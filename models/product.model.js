@@ -8,6 +8,10 @@ const productSchema = new mongoose.Schema({
     description: {
         type: String,
     },
+    image: {
+        type: String,
+        required: true,
+    },
     price: {
         type: Number,
         required: true,
@@ -30,7 +34,23 @@ const productSchema = new mongoose.Schema({
     salesHistory: [{
         date: Date,
         unitsSold: Number,
-      }],
+    }],
+    barcode:{ 
+        type: String,
+    },
+    weight: {
+        type: Number,
+    },
+    dimensions: {
+        length: Number,
+        width: Number,
+        height: Number,
+    },
+    manufacturer: {
+        type: String,
+    },
 })
 
-module.exports = mongoose.model('Product', productSchema);
+const ProductModel = mongoose.model("Product", productSchema)
+
+export default ProductModel
