@@ -1,6 +1,6 @@
 import express from 'express';
 import multer from 'multer';
-import { createProduct } from '../controller/product.controller.js';
+import { createProduct, getAllCategories, getProductByName } from '../controller/product.controller.js';
 
 const productRouter = express.Router();
 const storage = multer.diskStorage({
@@ -12,5 +12,9 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 productRouter.post('/create', upload.single('image'), createProduct);
+
+productRouter.get('/getAll', getAllCategories);
+
+productRouter.get('/get/:productName', getProductByName);
 
 export default productRouter;

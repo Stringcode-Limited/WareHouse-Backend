@@ -10,7 +10,6 @@ export const mongoDB = async () => {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
-    console.log('DB_URL:', process.env.DB_URL);
     console.log('Server Up and Running');
   } catch (e) {
     console.log(e.message);
