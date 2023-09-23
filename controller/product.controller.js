@@ -107,3 +107,21 @@ export const getAvailableProductsByCategory = async (req, res) => {
   }
 };
 
+
+export const updateProduct = async(req,res)=>{
+    try {
+        const productId = req.params.productId;
+        const updatedFields = req.body;
+        const updatedProduct = await ProductModel.findByIdAndUpdate(productId, updatedFields,{ new: true });
+    if (!updatedProduct) {
+      return res.status(404).json({ message: "Product not found." });
+    }
+    res.json({
+        status: "Success",
+        data: updatedProduct
+    });;
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+}
