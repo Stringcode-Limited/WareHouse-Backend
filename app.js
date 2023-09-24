@@ -4,6 +4,7 @@ import cors from 'cors';
 import { mongoDB } from './config/database.js';
 import productRouter from './route/product.route.js';
 import adminRouter from './route/auth.route.js';
+import shipmentRouter from './route/ship.route.js';
 
 dotenv.config();
 mongoDB();
@@ -27,7 +28,8 @@ app.use((req, res, next) => {
 });
 
 app.use('/api/v1/product', productRouter);
-app.use('/api/v1/admin', adminRouter)
+app.use('/api/v1/admin', adminRouter);
+app.use('/api/v1/admin-ship', shipmentRouter)
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
