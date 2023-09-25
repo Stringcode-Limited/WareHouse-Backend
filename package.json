@@ -4,6 +4,9 @@
   "description": "WareHouse",
   "main": "app.js",
   "type": "module",
+  "engines": {
+    "node": "16.20.1"
+  },
   "scripts": {
     "start": "nodemon app.js"
   },
