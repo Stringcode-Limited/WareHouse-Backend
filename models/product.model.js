@@ -46,9 +46,6 @@ const productSchema = new mongoose.Schema({
         width: Number,
         height: Number,
     },
-    manufacturer: {
-        type: String,
-    },
 })
 
 const ProductModel = mongoose.model("Product", productSchema)

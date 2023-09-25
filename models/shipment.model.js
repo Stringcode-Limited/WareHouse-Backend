@@ -49,7 +49,7 @@ const shipmentSchema = new mongoose.Schema({
   deliveryFee: {
     type: Number
   },
-  totalFees : {
+  totalFees: {
     type: Number,
     required: true,
   }

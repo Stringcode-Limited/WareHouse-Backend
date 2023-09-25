@@ -13,7 +13,6 @@ export const createProduct = async (req, res) => {
       barcode,
       weight,
       dimensions,
-      manufacturer,
     } = req.body;
     const image = req.file.path;
 
@@ -29,7 +28,6 @@ export const createProduct = async (req, res) => {
       barcode,
       weight,
       dimensions,
-      manufacturer,
     });
     const newProduct = await product.save();
     res.status(201).json(newProduct);
