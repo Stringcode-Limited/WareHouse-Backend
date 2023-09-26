@@ -60,6 +60,7 @@ export const getAllProducts = async(req,res)=>{
   }
 };
 
+
 export const getAllCategories = async (req, res) => {
   try {
     const categories = await ProductModel.aggregate([
@@ -119,6 +120,24 @@ export const getProductByName = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+export const getProductById = async (req, res) => {
+  try {
+    const productId = req.params.productId;
+    const product = await ProductModel.findById(productId);
+    if (!product) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+    res.json({
+      status: "Success",
+      data: product,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 
 export const getAllAvailableProducts = async (req, res) => {
   try {

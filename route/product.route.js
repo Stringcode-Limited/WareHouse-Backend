@@ -1,6 +1,6 @@
 import express from 'express';
 import multer from 'multer';
-import { createProduct, getAllAvailableProducts, getAllCategories, getAvailableProductsByCategory, getByBarcode, getByExpiration, getProductByName, updateProduct } from '../controller/product.controller.js';
+import { createProduct, getAllAvailableProducts, getAllCategories, getAllProducts, getAvailableProductsByCategory, getByBarcode, getByExpiration, getProductById, getProductByName, updateProduct } from '../controller/product.controller.js';
 import { isAdmin } from './../middleware/admin.js';
 import { loggedIn } from './../middleware/loginAccess.js';
 import { productStorage } from '../config/cloudinary.js';
@@ -12,7 +12,11 @@ productRouter.post('/create', productImageUpload.single('image'), loggedIn, isAd
 
 productRouter.get('/getAll', getAllCategories);
 
+productRouter.get('/all', getAllProducts)
+
 productRouter.get('/get/:productName', getProductByName);
+
+productRouter.get('/get/:productId', getProductById);
 
 productRouter.get('/available', getAllAvailableProducts);
 
