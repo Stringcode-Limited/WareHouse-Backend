@@ -1,11 +1,7 @@
 import ShipmentModel from "./../models/shipment.model.js";
+import ProductModel from "../models/product.model.js";
 
-// Import necessary modules and models
-const ShipmentModel = require('../models/shipment'); // Import your Shipment model
-const ProductModel = require('../models/product'); // Import your Product model
-
-// Create a function to create a shipment
-const createShipment = async (req, res) => {
+export const createShipment = async (req, res) => {
   try {
     const { products, shipmentStatus, shipmentDate, recipient, deliveryFee } =
       req.body;
@@ -41,8 +37,6 @@ const createShipment = async (req, res) => {
     res.status(500).json({ error: 'Unable to create shipment' });
   }
 };
-
-module.exports = { createShipment };
 
 
 export const cancelShipment = async (req, res) => {
