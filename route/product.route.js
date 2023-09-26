@@ -16,7 +16,7 @@ productRouter.get('/get/:productName', getProductByName);
 
 productRouter.get('/available', getAllAvailableProducts);
 
-productRouter.get('/available/:category', loggedIn, isAdmin , getAvailableProductsByCategory);
+productRouter.get('/available/:category', getAvailableProductsByCategory);
 
 productRouter.put('/update/:productId', loggedIn, isAdmin, updateProduct); 
 

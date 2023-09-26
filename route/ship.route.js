@@ -9,6 +9,7 @@ import {
   totalShipmentsByMonth,
   AverageShipmentsPerMonth,
   TotalShipmentsForCurrentDay,
+  shipmentInLastWeek,
 } from '../controller/shipment.controller.js';
 import { loggedIn } from '../middleware/loginAccess.js';
 import { isAdmin } from '../middleware/admin.js';
@@ -22,6 +23,8 @@ shipmentRouter.put('/cancel/:shipmentId', loggedIn, isAdmin, cancelShipment);
 shipmentRouter.put('/ship/:shipmentId', loggedIn, isAdmin,shipShipment);
 
 shipmentRouter.put('/delivered/:shipmentId', loggedIn, isAdmin, deliverShipment);
+
+shipmentRouter.get('/latest-shipments', loggedIn, isAdmin, shipmentInLastWeek);
 
 shipmentRouter.get('/total-amount/:day', loggedIn, isAdmin, totalAmountForToday);
 
