@@ -113,6 +113,37 @@ export const totalShipmentForDay = async (req, res) => {
   }
 };
 
+export const totalAmountForToday = async (req, res) => {
+  try {
+    const { day } = req.params;
+    const startDate = new Date(day);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(day);
+    endDate.setHours(23, 59, 59, 999);
+    const totalAmount = await ShipmentModel.aggregate([
+      {
+        $match: {
+          shipmentDate: { $gte: startDate, $lte: endDate },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalAmount: { $sum: "$totalFees" },
+        },
+      },
+    ]);
+    if (totalAmount.length > 0) {
+      res.json({ totalAmount: totalAmount[0].totalAmount });
+    } else {
+      res.json({ totalAmount: 0 });
+    }
+  } catch (error) {
+    res.status(500).json({ error: "Unable to calculate total amount" });
+  }
+};
+
+
 export const shipmentsForPeriod = async (req, res) => {
   try {
     const { startDate, endDate } = req.params;
