@@ -1,5 +1,6 @@
 import UserModel from "../models/user.model.js";
 import bcrypt from "bcrypt";
+import tokenGen from './../utils/tokenGenerate.js';
 
 export const RegisterAdmin = async (req, res) => {
   try {
