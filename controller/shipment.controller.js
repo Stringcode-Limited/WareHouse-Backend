@@ -97,21 +97,38 @@ export const deliverShipment = async (req, res) => {
   }
 };
 
-export const totalShipmentForDay = async (req, res) => {
+
+export const averageAmountPerMonth = async (req, res) => {
   try {
-    const today = new Date();
-    const startDate = new Date(today);
-    startDate.setHours(0, 0, 0, 0);
-    const endDate = new Date(today);
-    endDate.setHours(23, 59, 59, 999);
-    const totalShipments = await ShipmentModel.countDocuments({
-      shipmentDate: { $gte: startDate, $lte: endDate },
-    });
-    res.json({ totalShipments });
+    const pipeline = [
+      {
+        $group: {
+          _id: {
+            year: { $year: '$shipmentDate' },
+            month: { $month: '$shipmentDate' },
+          },
+          totalAmount: { $sum: '$totalFees' },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          averageAmount: { $avg: '$totalAmount' },
+        },
+      },
+    ];
+    const result = await ShipmentModel.aggregate(pipeline);
+    if (result.length === 0) {
+      return res.json({ averageAmount: 0 });
+    }
+    const averageAmount = result[0].averageAmount;
+    res.json({ averageAmount });
   } catch (error) {
-    res.status(500).json({ error: 'Unable to calculate total shipments for today' });
+    console.error(error);
+    res.status(500).json({ error: 'Unable to calculate average amount per month' });
   }
 };
+
 
 export const totalAmountForToday = async (req, res) => {
   try {
@@ -175,7 +192,7 @@ export const totalShipmentsByMonth = async (req, res) => {
   }
 };
 
-export const calculateAverageShipmentsPerMonth = async (req, res) => {
+export const AverageShipmentsPerMonth = async (req, res) => {
   try {
     const totalShipmentsByMonth = await totalShipmentsByMonth();
     const totalMonths = 12;
@@ -191,7 +208,7 @@ export const calculateAverageShipmentsPerMonth = async (req, res) => {
 };
 
 
-export const calculateTotalShipmentsForCurrentDay = async (req, res) => {
+export const TotalShipmentsForCurrentDay = async (req, res) => {
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -201,5 +218,34 @@ export const calculateTotalShipmentsForCurrentDay = async (req, res) => {
     res.json({ totalShipments });
   } catch (error) {
     res.status(500).json({ error: "Unable to calculate total shipments" });
+  }
+};
+
+
+export const totalAmountForPeriod = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.params;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const totalAmount = await ShipmentModel.aggregate([
+      {
+        $match: {
+          shipmentDate: { $gte: start, $lte: end },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalAmount: { $sum: '$totalFees' },
+        },
+      },
+    ]);
+    if (totalAmount.length === 0) {
+      return res.json({ totalAmount: 0 });
+    }
+    res.json({ totalAmount: totalAmount[0].totalAmount });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Unable to calculate total amount' });
   }
 };
