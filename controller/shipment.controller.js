@@ -99,17 +99,17 @@ export const deliverShipment = async (req, res) => {
 
 export const totalShipmentForDay = async (req, res) => {
   try {
-    const { day } = req.params;
-    const startDate = new Date(day);
+    const today = new Date();
+    const startDate = new Date(today);
     startDate.setHours(0, 0, 0, 0);
-    const endDate = new Date(day);
+    const endDate = new Date(today);
     endDate.setHours(23, 59, 59, 999);
     const totalShipments = await ShipmentModel.countDocuments({
       shipmentDate: { $gte: startDate, $lte: endDate },
     });
     res.json({ totalShipments });
   } catch (error) {
-    res.status(500).json({ error: "Unable to calculate total shipments" });
+    res.status(500).json({ error: 'Unable to calculate total shipments for today' });
   }
 };
 
