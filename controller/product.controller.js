@@ -39,6 +39,27 @@ export const createProduct = async (req, res) => {
   }
 };
 
+export const getAllProducts = async(req,res)=>{
+  try {
+    const products = await ProductModel.find();
+    const totalProducts = products.length;
+    res.json({
+      status: 'success',
+      message: 'Products retrieved successfully',
+      data: {
+        products,
+        totalProducts,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Internal Server Error',
+    });
+  }
+};
+
 export const getAllCategories = async (req, res) => {
   try {
     const categories = await ProductModel.aggregate([

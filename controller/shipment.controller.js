@@ -1,14 +1,32 @@
 import ShipmentModel from "./../models/shipment.model.js";
 
-export const createShipment = async (req, res) => {
+// Import necessary modules and models
+const ShipmentModel = require('../models/shipment'); // Import your Shipment model
+const ProductModel = require('../models/product'); // Import your Product model
+
+// Create a function to create a shipment
+const createShipment = async (req, res) => {
   try {
     const { products, shipmentStatus, shipmentDate, recipient, deliveryFee } =
       req.body;
+    if (!products || products.length === 0) {
+      return res.status(400).json({ error: 'No products specified for shipment' });
+    }
     const totalProductPrice = products.reduce(
       (total, product) => total + product.price * product.quantity,
       0
     );
     const totalFees = totalProductPrice + deliveryFee;
+    for (const product of products) {
+      const existingProduct = await ProductModel.findById(product.productId);
+      if (!existingProduct || product.quantity > existingProduct.quantity) {
+        return res.status(400).json({
+          error: `Insufficient stock for product: ${product.productId}`,
+        });
+      }
+      existingProduct.quantity -= product.quantity;
+      await existingProduct.save();
+    }
     const shipment = new ShipmentModel({
       products,
       shipmentStatus,
@@ -20,9 +38,12 @@ export const createShipment = async (req, res) => {
     const newShipment = await shipment.save();
     res.status(201).json(newShipment);
   } catch (error) {
-    res.status(500).json({ error: "Unable to create shipment" });
+    res.status(500).json({ error: 'Unable to create shipment' });
   }
 };
+
+module.exports = { createShipment };
+
 
 export const cancelShipment = async (req, res) => {
   try {
