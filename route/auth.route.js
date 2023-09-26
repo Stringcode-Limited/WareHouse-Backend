@@ -10,7 +10,7 @@ const profilePictureUpload = multer({ storage: profilePictureStorage });
 
 adminRouter.post('/Register', RegisterAdmin);
 
-adminRouter.get('/Login', AdminLogIn);
+adminRouter.post('/Login', AdminLogIn);
 
 adminRouter.put('/update-password', isAdmin, loggedIn, updatePassword);
 

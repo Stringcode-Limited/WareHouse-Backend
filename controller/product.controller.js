@@ -1,6 +1,10 @@
 import ProductModel from "../models/product.model.js";
 
 export const createProduct = async (req, res) => {
+  const userId = req.userAuth;
+  if (!userId) {
+    return res.status(404).json({ message: "User not found." });
+  }
   try {
     const {
       name,
@@ -15,7 +19,6 @@ export const createProduct = async (req, res) => {
       dimensions,
     } = req.body;
     const image = req.file.path;
-
     const product = new ProductModel({
       name,
       description,
@@ -96,6 +99,39 @@ export const getProductByName = async (req, res) => {
   }
 };
 
+export const getAllAvailableProducts = async (req, res) => {
+  try {
+    const products = await ProductModel.find({ availability: "Available" });
+    if (products.length === 0) {
+      return res.json({ message: "No available products" });
+    }
+    res.json({
+      status: "Success",
+      data: products,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+
+export const getAllFinishedProducts = async (req, res) => {
+  try {
+    const products = await ProductModel.find({ availability: "Out-of-stock" });
+    if (products.length === 0) {
+      return res.json({ message: "No products are out of stock" });
+    }
+    res.json({
+      status: "Success",
+      data: products,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 export const getAvailableProductsByCategory = async (req, res) => {
   try {
     const category = req.params.category;
@@ -116,7 +152,31 @@ export const getAvailableProductsByCategory = async (req, res) => {
   }
 };
 
+export const getFinishedProductsByCategory = async (req, res) => {
+  try {
+    const category = req.params.category;
+    const products = await ProductModel.find({
+      category: category,
+      availability: "Out-of-Stock",
+    });
+    if (products.length === 0) {
+      return res.json({ message: "All products are available" });
+    }
+    res.json({
+      status: "Success",
+      data: products,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 export const updateProduct = async (req, res) => {
+  const userId = req.userAuth;
+  if (!userId) {
+    return res.status(404).json({ message: "User not found." });
+  }
   try {
     const productId = req.params.productId;
     const updatedFields = req.body;
@@ -138,26 +198,29 @@ export const updateProduct = async (req, res) => {
   }
 };
 
-export const getByManufacturer = async (req, res) => {
+export const getSalesHistory = async(req,res)=>{
+  const userId = req.userAuth;
+  if (!userId) {
+    return res.status(404).json({ message: "User not found." });
+  }
   try {
-    const manufacturer = req.params.manufacturer;
-    const products = await ProductModel.find({
-      manufacturer: manufacturer,
-    });
-    if (products.length === 0) {
-      return res.json({
-        message: "No products found with the specified manufacturer",
-      });
+    const productId = req.params.productId;
+    const product = await ProductModel.findById(productId);
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found.' });
     }
-    res.json(products);
+    res.json(product.salesHistory);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ message: 'Internal Server Error' });
   }
-};
-
+}
 
 export const getByExpiration = async (req, res) => {
+  const userId = req.userAuth;
+  if (!userId) {
+    return res.status(404).json({ message: "User not found." });
+  }
   try {
     const expirationDate = req.params.expirationDate;
     const products = await ProductModel.find({
@@ -177,6 +240,10 @@ export const getByExpiration = async (req, res) => {
 
 
 export const getByBarcode = async (req, res) => {
+  const userId = req.userAuth;
+  if (!userId) {
+    return res.status(404).json({ message: "User not found." });
+  }
   try {
     const barcode = req.params.barcode;
     const products = await ProductModel.find({

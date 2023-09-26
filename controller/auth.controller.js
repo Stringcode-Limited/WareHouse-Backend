@@ -56,21 +56,21 @@ export const AdminLogIn = async (req, res) => {
       }
       const isPasswordValid = bcrypt.compare(password, existingUser.password);
       if (!isPasswordValid) {
-        return res.status(401).json({
+         res.json({
           status: "error",
-          message: "Invalid password",
+          message: "Invalid Credentials",
         });
       }
       const token = tokenGen(existingUser);
       existingUser.lastLogin = Date.now();
       existingUser.save();
-      res.status(200).json({
+      res.json({
         status: "success",
         token, 
       });
     } catch (error) {
       console.log(error);
-      res.status(500).json({
+      res.json({
         status: "error",
         message: "Failed to login",
       });
