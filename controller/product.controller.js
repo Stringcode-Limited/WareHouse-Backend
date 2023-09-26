@@ -1,11 +1,15 @@
 import ProductModel from "../models/product.model.js";
 
 export const createProduct = async (req, res) => {
-  const userId = req.userAuth;
-  if (!userId) {
-    return res.status(404).json({ message: "User not found." });
-  }
+  console.log(req.file);
+  // const userId = req.userAuth;
+  // if (!userId) {
+  //   return res.status(404).json({ message: "User not found." });
+  // }
   try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
     const {
       name,
       description,
@@ -35,7 +39,8 @@ export const createProduct = async (req, res) => {
     const newProduct = await product.save();
     res.status(201).json(newProduct);
   } catch (error) {
-    res.status(500).json({ error: "Unable to create product" });
+    console.error(error); 
+    res.status(500).json({ error: "Unable to create product" }); 
   }
 };
 

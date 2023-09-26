@@ -10,6 +10,8 @@ import {
   AverageShipmentsPerMonth,
   TotalShipmentsForCurrentDay,
   shipmentInLastWeek,
+  getAllShipments,
+  getByStatus,
 } from '../controller/shipment.controller.js';
 import { loggedIn } from '../middleware/loginAccess.js';
 import { isAdmin } from '../middleware/admin.js';
@@ -17,6 +19,10 @@ import { isAdmin } from '../middleware/admin.js';
 const shipmentRouter = express.Router();
 
 shipmentRouter.post('/create', loggedIn, isAdmin, createShipment);
+
+shipmentRouter.get('/all-shipments', getAllShipments);
+
+shipmentRouter.get('/byStatus', getByStatus);
 
 shipmentRouter.put('/cancel/:shipmentId', loggedIn, isAdmin, cancelShipment); 
 

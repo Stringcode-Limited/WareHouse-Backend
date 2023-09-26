@@ -60,6 +60,47 @@ export const cancelShipment = async (req, res) => {
   }
 };
 
+export const getAllShipments = async(req,res)=>{
+  try {
+    const shipments = await ShipmentModel.find();
+    res.json({
+      status: "success",
+      message: "Shipments retrieved successfully",
+      data: shipments,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      status: "error",
+      message: "Internal Server Error",
+    });
+  }
+}
+
+export const getByStatus = async(req,res)=>{
+  try {
+    const { status } = req.params;
+    if (!["Pending", "Shipped", "Delivered", "Canceled"].includes(status)) {
+      return res.status(400).json({
+        status: "error",
+        message: "Invalid shipment status",
+      });
+    }
+    const shipments = await ShipmentModel.find({ shipmentStatus: status });
+    res.json({
+      status: "success",
+      message: `Shipments with status '${status}' retrieved successfully`,
+      data: shipments,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      status: "error",
+      message: "Internal Server Error",
+    });
+  }
+};
+
 export const shipShipment = async (req, res) => {
   try {
     const shipmentId = req.params.shipmentId;

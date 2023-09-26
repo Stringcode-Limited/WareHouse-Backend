@@ -6,17 +6,25 @@ import { loggedIn } from './../middleware/loginAccess.js';
 import { productStorage } from '../config/cloudinary.js';
 
 const productRouter = express.Router();
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, "/uploads");
+    },
+    filename: function (req, file, cb) {
+      cb(null, Date.now() + "-" + file.originalname);
+    },
+  });
 const productImageUpload = multer({ storage: productStorage });
 
-productRouter.post('/create', productImageUpload.single('image'), loggedIn, isAdmin , createProduct);
+productRouter.post('/create', productImageUpload.single('image'), createProduct);
 
 productRouter.get('/getAll', getAllCategories);
-
-productRouter.get('/all', getAllProducts)
-
-productRouter.get('/get/:productName', getProductByName);
+ 
+productRouter.get('/all', getAllProducts);
 
 productRouter.get('/get/:productId', getProductById);
+
+productRouter.get('/get/:productName', getProductByName);
 
 productRouter.get('/available', getAllAvailableProducts);
 
