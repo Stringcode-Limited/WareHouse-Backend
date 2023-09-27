@@ -164,19 +164,35 @@ export const getAllAvailableProducts = async (req, res) => {
 
 export const getAllFinishedProducts = async (req, res) => {
   try {
-    const products = await ProductModel.find({ availability: "Out-of-stock" });
-    if (products.length === 0) {
+    const products = await ProductModel.find();
+    const availableProducts = products.filter((product) => product.quantity > 0);
+    const outOfStockProducts = products.filter((product) => product.quantity === 0);
+    if (outOfStockProducts.length > 0) {
+      await ProductModel.updateMany(
+        { _id: { $in: outOfStockProducts.map((product) => product._id) } },
+        { availability: "Out-of-Stock" }
+      );
+    }
+    if (availableProducts.length > 0) {
+      await ProductModel.updateMany(
+        { _id: { $in: availableProducts.map((product) => product._id) } },
+        { availability: "Available" }
+      );
+    }
+    const outOfStockProductsUpdated = await ProductModel.find({ availability: "Out-of-Stock" });
+    if (outOfStockProductsUpdated.length === 0) {
       return res.json({ message: "No products are out of stock" });
     }
     res.json({
       status: "Success",
-      data: products,
+      data: outOfStockProductsUpdated,
     });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 export const getAvailableProductsByCategory = async (req, res) => {
   try {

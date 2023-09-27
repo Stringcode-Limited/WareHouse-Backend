@@ -5,27 +5,22 @@ export const createShipment = async (req, res) => {
   try {
     const { products, shipmentStatus, shipmentDate, recipient, deliveryFee } =
       req.body;
-
     if (!products || products.length === 0) {
       return res.status(400).json({ error: 'No products specified for shipment' });
     }
-
     let totalProductPrice = 0;
     for (const product of products) {
       const existingProduct = await ProductModel.findById(product.productId);
-
       if (!existingProduct) {
         return res.status(400).json({
           error: `Product not found for ID: ${product.productId}`,
         });
       }
-
-      if (product.quantity > existingProduct.quantity) {
+      if (product.quantity > existingProduct.quantity  || product.quantity === 0) {
         return res.status(400).json({
           error: `Insufficient stock for product: ${existingProduct.name}`,
         });
       }
-
       existingProduct.quantity -= product.quantity;
       await existingProduct.save();
 
@@ -194,15 +189,16 @@ export const averageAmountPerMonth = async (req, res) => {
 
 export const totalAmountForToday = async (req, res) => {
   try {
-    const { day } = req.params;
-    const startDate = new Date(day);
-    startDate.setHours(0, 0, 0, 0);
-    const endDate = new Date(day);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const endDate = new Date();
     endDate.setHours(23, 59, 59, 999);
+    // console.log("Today:", today);
+    // console.log("End Date:", endDate);
     const totalAmount = await ShipmentModel.aggregate([
       {
         $match: {
-          shipmentDate: { $gte: startDate, $lte: endDate },
+          shipmentDate: { $gte: today, $lte: endDate },
         },
       },
       {
@@ -212,34 +208,42 @@ export const totalAmountForToday = async (req, res) => {
         },
       },
     ]);
+    // console.log("Total Amount:", totalAmount);
     if (totalAmount.length > 0) {
       res.json({ totalAmount: totalAmount[0].totalAmount });
     } else {
       res.json({ totalAmount: 0 });
     }
   } catch (error) {
+    console.error("Error:", error);
     res.status(500).json({ error: "Unable to calculate total amount" });
   }
 };
+
+
 
 export const shipmentInLastWeek = async (req, res) => {
   try {
     const currentDate = new Date();
     const sevenDaysAgo = new Date(currentDate);
     sevenDaysAgo.setDate(currentDate.getDate() - 7);
-    const latestShipments = await ShipmentModel.find({
-      shipmentDate: { $gte: sevenDaysAgo, $lte: currentDate },
-    })
-      .sort({ shipmentDate: -1 });
-
+    const [latestShipments, totalLatestShipments] = await Promise.all([
+      ShipmentModel.find({
+        shipmentDate: { $gte: sevenDaysAgo, $lte: currentDate },
+      })
+        .sort({ shipmentDate: -1 })
+        .lean(),
+      ShipmentModel.countDocuments({
+        shipmentDate: { $gte: sevenDaysAgo, $lte: currentDate },
+      }),
+    ]);
     const formattedShipments = latestShipments.map((shipment) => ({
       shipmentId: shipment._id,
       shipmentDate: shipment.shipmentDate,
       recipient: shipment.recipient,
       totalFee: shipment.totalFees,
     }));
-
-    res.json({ latestShipments: formattedShipments });
+    res.json({ latestShipments: formattedShipments, totalLatestShipments });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Unable to fetch the latest shipments' });
@@ -247,19 +251,21 @@ export const shipmentInLastWeek = async (req, res) => {
 };
 
 
-export const shipmentsForPeriod = async (req, res) => {
+
+export const shipmentsForLast30Days = async (req, res) => {
   try {
-    const { startDate, endDate } = req.params;
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - 30);
     const totalShipments = await ShipmentModel.countDocuments({
-      shipmentDate: { $gte: start, $lte: end },
+      shipmentDate: { $gte: startDate, $lte: endDate },
     });
     res.json({ totalShipments });
   } catch (error) {
     res.status(500).json({ error: "Unable to calculate total shipments" });
   }
 };
+
 
 export const totalShipmentsByMonth = async (req, res) => {
   try {
@@ -289,26 +295,19 @@ export const totalShipmentsByMonth = async (req, res) => {
 
 export const AverageShipmentsPerMonth = async (req, res) => {
   try {
-    const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    const totalShipmentsByMonth = [];
-    for (let month = 0; month < 12; month++) {
-      const startDate = new Date(new Date().getFullYear(), month, 1);
-      const endDate = new Date(new Date().getFullYear(), month + 1, 0);
-      const totalShipments = await ShipmentModel.countDocuments({
-        shipmentDate: { $gte: startDate, $lte: endDate },
-      });
-      totalShipmentsByMonth.push(totalShipments);
-    }
-    const totalMonths = 12;
-    const totalShipments = totalShipmentsByMonth.reduce((total, shipments) => total + shipments, 0);
-    const averageShipmentsPerMonth = totalShipments / totalMonths;
-
-    res.json({ averageShipmentsPerMonth });
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth();
+    const currentDay = currentDate.getDate();
+    const startDate = new Date(currentYear, currentMonth, 1);
+    const endDate = new Date(currentYear, currentMonth + 1, 0);
+    const totalShipments = await ShipmentModel.countDocuments({
+      shipmentDate: { $gte: startDate, $lte: endDate },
+    });
+    const averageShipmentsPerDay = totalShipments / currentDay;
+    res.json({ averageShipmentsPerDay });
   } catch (error) {
-    res.status(500).json({ error: "Unable to calculate average shipments" });
+    res.status(500).json({ error: "Unable to calculate average shipments for the current month" });
   }
 };
 

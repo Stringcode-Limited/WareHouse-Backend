@@ -5,13 +5,13 @@ import {
   shipShipment,
   deliverShipment,
   totalAmountForToday,
-  shipmentsForPeriod,
   totalShipmentsByMonth,
   AverageShipmentsPerMonth,
   TotalShipmentsForCurrentDay,
   shipmentInLastWeek,
   getAllShipments,
   getByStatus,
+  shipmentsForLast30Days,
 } from '../controller/shipment.controller.js';
 import { loggedIn } from '../middleware/loginAccess.js';
 import { isAdmin } from '../middleware/admin.js';
@@ -32,9 +32,9 @@ shipmentRouter.put('/delivered/:shipmentId', loggedIn, isAdmin, deliverShipment)
 
 shipmentRouter.get('/latest-shipments', loggedIn, isAdmin, shipmentInLastWeek);
 
-shipmentRouter.get('/total-amount/:day', loggedIn, isAdmin, totalAmountForToday);
+shipmentRouter.get('/total-amount', loggedIn, isAdmin, totalAmountForToday);
 
-shipmentRouter.get('/total-for-period/:startDate/:endDate', loggedIn, isAdmin, shipmentsForPeriod);
+shipmentRouter.get('/total-for-period', loggedIn, isAdmin, shipmentsForLast30Days);
 
 shipmentRouter.get('/total-by-month', loggedIn, isAdmin, totalShipmentsByMonth);
 
