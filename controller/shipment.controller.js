@@ -5,23 +5,41 @@ export const createShipment = async (req, res) => {
   try {
     const { products, shipmentStatus, shipmentDate, recipient, deliveryFee } =
       req.body;
+
     if (!products || products.length === 0) {
       return res.status(400).json({ error: 'No products specified for shipment' });
     }
-    const totalProductPrice = products.reduce(
-      (total, product) => total + product.price * product.quantity,
-      0
-    );
-    const totalFees = totalProductPrice + deliveryFee;
+
+    let totalProductPrice = 0;
     for (const product of products) {
       const existingProduct = await ProductModel.findById(product.productId);
-      if (!existingProduct || product.quantity > existingProduct.quantity) {
+
+      if (!existingProduct) {
         return res.status(400).json({
-          error: `Insufficient stock for product: ${product.productId}`,
+          error: `Product not found for ID: ${product.productId}`,
         });
       }
+
+      if (product.quantity > existingProduct.quantity) {
+        return res.status(400).json({
+          error: `Insufficient stock for product: ${existingProduct.name}`,
+        });
+      }
+
       existingProduct.quantity -= product.quantity;
       await existingProduct.save();
+
+      totalProductPrice += existingProduct.price * product.quantity;
+    }
+
+    if (isNaN(deliveryFee)) {
+      return res.status(400).json({ error: 'Invalid deliveryFee value' });
+    }
+
+    const totalFees = totalProductPrice + deliveryFee;
+
+    if (isNaN(totalFees)) {
+      return res.status(400).json({ error: 'Invalid totalFees value' });
     }
     const shipment = new ShipmentModel({
       products,
@@ -34,9 +52,12 @@ export const createShipment = async (req, res) => {
     const newShipment = await shipment.save();
     res.status(201).json(newShipment);
   } catch (error) {
+    console.error('Error creating shipment:', error);
     res.status(500).json({ error: 'Unable to create shipment' });
   }
 };
+
+
 
 
 export const cancelShipment = async (req, res) => {
@@ -235,6 +256,10 @@ export const shipmentsForPeriod = async (req, res) => {
 
 export const totalShipmentsByMonth = async (req, res) => {
   try {
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
     const totalShipmentsByMonth = [];
     for (let month = 0; month < 12; month++) {
       const startDate = new Date(new Date().getFullYear(), month, 1);
@@ -242,13 +267,18 @@ export const totalShipmentsByMonth = async (req, res) => {
       const totalShipments = await ShipmentModel.countDocuments({
         shipmentDate: { $gte: startDate, $lte: endDate },
       });
-      totalShipmentsByMonth.push({ month: month + 1, totalShipments });
+      totalShipmentsByMonth.push({
+        month: monthNames[month],
+        totalShipments: totalShipments
+      });
     }
     res.json(totalShipmentsByMonth);
   } catch (error) {
     res.status(500).json({ error: "Unable to calculate total shipments" });
   }
 };
+
+
 
 export const AverageShipmentsPerMonth = async (req, res) => {
   try {

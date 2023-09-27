@@ -20,9 +20,9 @@ const shipmentRouter = express.Router();
 
 shipmentRouter.post('/create', loggedIn, isAdmin, createShipment);
 
-shipmentRouter.get('/all-shipments', getAllShipments);
+shipmentRouter.get('/all-shipments', loggedIn, isAdmin, getAllShipments);
 
-shipmentRouter.get('/byStatus', getByStatus);
+shipmentRouter.get('/byStatus',  loggedIn, isAdmin, getByStatus);
 
 shipmentRouter.put('/cancel/:shipmentId', loggedIn, isAdmin, cancelShipment); 
 
