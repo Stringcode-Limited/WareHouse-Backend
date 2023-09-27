@@ -227,18 +227,25 @@ export const shipmentInLastWeek = async (req, res) => {
     const currentDate = new Date();
     const sevenDaysAgo = new Date(currentDate);
     sevenDaysAgo.setDate(currentDate.getDate() - 7);
-    const latestShipment = await ShipmentModel.findOne({
+    const latestShipments = await ShipmentModel.find({
       shipmentDate: { $gte: sevenDaysAgo, $lte: currentDate },
     })
-      .sort({ shipmentDate: -1 })
-      .limit(1);
+      .sort({ shipmentDate: -1 });
 
-    res.json({ latestShipment });
+    const formattedShipments = latestShipments.map((shipment) => ({
+      shipmentId: shipment._id,
+      shipmentDate: shipment.shipmentDate,
+      recipient: shipment.recipient,
+      totalFee: shipment.totalFees,
+    }));
+
+    res.json({ latestShipments: formattedShipments });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Unable to fetch the latest shipment' });
+    res.status(500).json({ error: 'Unable to fetch the latest shipments' });
   }
 };
+
 
 export const shipmentsForPeriod = async (req, res) => {
   try {

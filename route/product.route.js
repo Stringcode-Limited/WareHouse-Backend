@@ -22,7 +22,7 @@ productRouter.get('/getAll', getAllCategories);
  
 productRouter.get('/all', getAllProducts);
 
-productRouter.get('/get/:productId', getProductById);
+productRouter.get('/getId/:productId', getProductById);
 
 productRouter.get('/get/:productName', getProductByName);
 

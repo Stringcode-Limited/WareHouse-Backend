@@ -2,10 +2,10 @@ import ProductModel from "../models/product.model.js";
 
 export const createProduct = async (req, res) => {
   console.log(req.file);
-  // const userId = req.userAuth;
-  // if (!userId) {
-  //   return res.status(404).json({ message: "User not found." });
-  // }
+  const userId = req.userAuth;
+  if (!userId) {
+    return res.status(404).json({ message: "User not found." });
+  }
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
