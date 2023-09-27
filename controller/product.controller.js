@@ -144,6 +144,7 @@ export const getProductById = async (req, res) => {
 };
 
 
+
 export const getAllAvailableProducts = async (req, res) => {
   try {
     const products = await ProductModel.find({ availability: "Available" });

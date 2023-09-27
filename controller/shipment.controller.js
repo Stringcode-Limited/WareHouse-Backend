@@ -289,18 +289,30 @@ export const totalShipmentsByMonth = async (req, res) => {
 
 export const AverageShipmentsPerMonth = async (req, res) => {
   try {
-    const totalShipmentsByMonth = await totalShipmentsByMonth();
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    const totalShipmentsByMonth = [];
+    for (let month = 0; month < 12; month++) {
+      const startDate = new Date(new Date().getFullYear(), month, 1);
+      const endDate = new Date(new Date().getFullYear(), month + 1, 0);
+      const totalShipments = await ShipmentModel.countDocuments({
+        shipmentDate: { $gte: startDate, $lte: endDate },
+      });
+      totalShipmentsByMonth.push(totalShipments);
+    }
     const totalMonths = 12;
-    const totalShipments = totalShipmentsByMonth.reduce(
-      (total, { totalShipments }) => total + totalShipments,
-      0
-    );
+    const totalShipments = totalShipmentsByMonth.reduce((total, shipments) => total + shipments, 0);
     const averageShipmentsPerMonth = totalShipments / totalMonths;
+
     res.json({ averageShipmentsPerMonth });
   } catch (error) {
     res.status(500).json({ error: "Unable to calculate average shipments" });
   }
 };
+
+
 
 
 export const TotalShipmentsForCurrentDay = async (req, res) => {
