@@ -1,10 +1,11 @@
 import ProductModel from "../models/product.model.js";
+import SupplierModel from "../models/supplier.model.js";
 
 export const createProduct = async (req, res) => {
   console.log(req.file);
   const userId = req.userAuth;
   if (!userId) {
-    return res.status(404).json({ message: "User not found." });
+    return res.status(404).json({ message: 'User not found.' });
   }
   try {
     if (!req.file) {
@@ -20,9 +21,20 @@ export const createProduct = async (req, res) => {
       expirationDate,
       barcode,
       weight,
-      dimensions,
+      supplierName,
+      supplierContactInfo,
     } = req.body;
+
     const image = req.file.path;
+    let supplier = await SupplierModel.findOne({ name: supplierName });
+    if (!supplier) {
+      supplier = new supplier({
+        name: supplierName,
+        contactInformation: supplierContactInfo,
+        suppliedProducts: [],
+      });
+      await supplier.save();
+    }
     const product = new ProductModel({
       name,
       description,
@@ -30,19 +42,25 @@ export const createProduct = async (req, res) => {
       price,
       quantity,
       category,
-      availability: "Available",
+      availability: 'Available',
       expirationDate,
       barcode,
       weight,
-      dimensions,
+      supplier: supplier._id,
     });
     const newProduct = await product.save();
+    supplier.suppliedProducts.push({
+      product: newProduct._id,
+      quantitySupplied: quantity,
+    });
+    await supplier.save();
     res.status(201).json(newProduct);
   } catch (error) {
-    console.error(error); 
-    res.status(500).json({ error: "Unable to create product" }); 
+    console.error(error);
+    res.status(500).json({ error: 'Unable to create product' });
   }
 };
+
 
 export const getAllProducts = async(req,res)=>{
   try {

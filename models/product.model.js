@@ -41,11 +41,10 @@ const productSchema = new mongoose.Schema({
     weight: {
         type: Number,
     },
-    dimensions: {
-        length: Number,
-        width: Number,
-        height: Number,
-    },
+    supplier: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Supplier',
+      },
 })
 
 const ProductModel = mongoose.model("Product", productSchema)
