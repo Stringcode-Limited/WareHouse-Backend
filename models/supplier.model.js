@@ -25,7 +25,7 @@ const supplierSchema = new mongoose.Schema({
             productName: {
                 type: String,
             },
-            quantity: {
+            expectedQuantity: {
                 type: Number,
                 required: true,
                 default: 0,
@@ -35,6 +35,9 @@ const supplierSchema = new mongoose.Schema({
             },
             dateDelivered: {
               type: Date,
+            },
+            quantityDelivered: {
+                type: Number,
             },
             fee: {
               type: Number,

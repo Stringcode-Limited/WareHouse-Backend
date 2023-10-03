@@ -15,29 +15,31 @@ export const createProduct = async (req, res) => {
       weight,
       supplierName,
     } = req.body;
-
     let supplier = await SupplierModel.findOne({ name: supplierName });
     if (!supplier) {
       return res.status(404).json({ message: 'Supplier not found' });
     }
-
-    // Check if an image file was provided in the request
-    let image = req.file ? req.file.path : 'default-image-path.jpg';
-
-    const product = new ProductModel({
-      name,
-      description,
-      image,
-      price,
-      quantity,
-      category,
-      availability: 'Available',
-      expirationDate,
-      barcode,
-      weight,
-      supplier: supplier._id,
-    });
-
+    let product = await ProductModel.findOne({ name, supplier: supplier._id });
+    if (!product) {
+      const image = req.file ? req.file.path : 'default-image-path.jpg';
+      product = new ProductModel({
+        name,
+        description,
+        image,
+        price,
+        quantity,
+        category,
+        availability: 'Available',
+        expirationDate,
+        lastSupplied: { date: new Date() },
+        barcode,
+        weight,
+        supplier: supplier._id,
+      });
+    } else {
+      product.quantity += quantity;
+      product.lastSupplied = { date: new Date() };
+    }
     const newProduct = await product.save();
     if (supplier) {
       const productToMatch = supplier.suppliedProducts.find(
@@ -48,14 +50,12 @@ export const createProduct = async (req, res) => {
         productToMatch.status = 'Delivered';
       }
     }
-
     res.status(201).json(newProduct);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Unable to create product' });
+    res.status(500).json({ error: 'Unable to create/update product' });
   }
 };
-
 
 
 

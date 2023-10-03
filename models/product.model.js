@@ -31,10 +31,9 @@ const productSchema = new mongoose.Schema({
     expirationDate: {
         type: Date,
     },
-    salesHistory: [{
+    lastSupplied: {
         date: Date,
-        unitsSold: Number,
-    }],
+    },
     barcode:{ 
         type: String,
     },
