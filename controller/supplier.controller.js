@@ -155,6 +155,20 @@ export const failedToSupply = async(req,res)=>{
       } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Unable to update supplied product' });
+      }     
+}
+
+export const getSuppliersStat = async(req,res)=>{
+    try {
+        const { supplierId } = req.params;
+        const supplier = await SupplierModel.findById(supplierId);
+        if (!supplier) {
+          return res.status(404).json({ message: 'Supplier not found' });
+        }
+        const suppliedProducts = supplier.suppliedProducts;
+        res.status(200).json({ suppliedProducts });
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Unable to fetch supplied products' });
       }
-      
 }
