@@ -2,15 +2,7 @@ import ProductModel from "../models/product.model.js";
 import SupplierModel from "../models/supplier.model.js";
 
 export const createProduct = async (req, res) => {
-  console.log(req.file);
-  const userId = req.userAuth;
-  if (!userId) {
-    return res.status(404).json({ message: 'User not found.' });
-  }
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
-    }
     const {
       name,
       description,
@@ -22,19 +14,16 @@ export const createProduct = async (req, res) => {
       barcode,
       weight,
       supplierName,
-      supplierContactInfo,
     } = req.body;
 
-    const image = req.file.path;
     let supplier = await SupplierModel.findOne({ name: supplierName });
     if (!supplier) {
-      supplier = new supplier({
-        name: supplierName,
-        contactInformation: supplierContactInfo,
-        suppliedProducts: [],
-      });
-      await supplier.save();
+      return res.status(404).json({ message: 'Supplier not found' });
     }
+
+    // Check if an image file was provided in the request
+    let image = req.file ? req.file.path : 'default-image-path.jpg';
+
     const product = new ProductModel({
       name,
       description,
@@ -48,18 +37,27 @@ export const createProduct = async (req, res) => {
       weight,
       supplier: supplier._id,
     });
+
     const newProduct = await product.save();
-    supplier.suppliedProducts.push({
-      product: newProduct._id,
-      quantitySupplied: quantity,
-    });
-    await supplier.save();
+    if (supplier) {
+      const productToMatch = supplier.suppliedProducts.find(
+        (productInfo) => productInfo.productName === name
+      );
+      if (productToMatch) {
+        productToMatch.dateDelivered = new Date();
+        productToMatch.status = 'Delivered';
+      }
+    }
+
     res.status(201).json(newProduct);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Unable to create product' });
   }
 };
+
+
+
 
 
 export const getAllProducts = async(req,res)=>{

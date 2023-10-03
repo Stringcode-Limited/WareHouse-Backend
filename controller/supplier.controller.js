@@ -3,14 +3,13 @@ import SupplierModel from "../models/supplier.model.js";
 export const createSupplier = async (req, res) => {
   try {
     const { name, contactInformation, suppliedProducts } = req.body;
-    const existingSupplier = await SupplierModel.findOne({
-      "contactInformation.email": contactInformation.email,
-      "suppliedProducts.productName": suppliedProducts[0].productName,
-    });
-    if (existingSupplier) {
-      return res.status(409).json({ error: "Supplier already exists" });
+    if (!contactInformation || !contactInformation.email) {
+      return res.status(400).json({ error: 'Invalid contact information' });
     }
-      const supplier = new SupplierModel({
+    if (!Array.isArray(suppliedProducts)) {
+      return res.status(400).json({ error: 'Invalid supplied products data' });
+    }
+    const supplier = new SupplierModel({
       name,
       contactInformation,
       suppliedProducts,
@@ -22,3 +21,5 @@ export const createSupplier = async (req, res) => {
     res.status(500).json({ error: "Unable to create supplier" });
   }
 };
+
+
