@@ -22,4 +22,16 @@ export const createSupplier = async (req, res) => {
   }
 };
 
-
+export const getSupplierById = async(req,res)=>{
+    try {
+        const { supplierId } = req.params;
+        const supplier = await SupplierModel.findById(supplierId);
+        if (!supplier) {
+          return res.status(404).json({ message: 'Supplier not found' });
+        }
+        res.status(200).json(supplier);
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Unable to fetch supplier' });
+      }
+}
