@@ -14,7 +14,7 @@ export const createProduct = async (req, res) => {
       barcode,
       weight,
       supplierName,
-    } = req.body;
+    } = req.body; 
     let supplier = await SupplierModel.findOne({ name: supplierName });
     if (!supplier) {
       return res.status(404).json({ message: 'Supplier not found' });
@@ -44,7 +44,7 @@ export const createProduct = async (req, res) => {
     if (supplier) {
       const productToMatch = supplier.suppliedProducts.find(
         (productInfo) => productInfo.productName === name
-      );
+      ); 
       if (productToMatch) {
         productToMatch.dateDelivered = new Date();
         productToMatch.status = 'Delivered';
