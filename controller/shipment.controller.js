@@ -2,6 +2,10 @@ import ShipmentModel from "./../models/shipment.model.js";
 import ProductModel from "../models/product.model.js";
 
 export const createShipment = async (req, res) => {
+  const user = req.userAuth;
+  if (!user) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
   try {
     const { products, shipmentStatus, shipmentDate, recipient, deliveryFee } =
       req.body;
@@ -56,6 +60,10 @@ export const createShipment = async (req, res) => {
 
 
 export const cancelShipment = async (req, res) => {
+  const user = req.userAuth;
+  if (!user) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
   try {
     const shipmentId = req.params.shipmentId;
     const canceledShipment = await ShipmentModel.findByIdAndUpdate(
@@ -77,6 +85,10 @@ export const cancelShipment = async (req, res) => {
 };
 
 export const getAllShipments = async(req,res)=>{
+  const user = req.userAuth;
+  if (!user) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
   try {
     const shipments = await ShipmentModel.find();
     res.json({
@@ -94,6 +106,10 @@ export const getAllShipments = async(req,res)=>{
 }
 
 export const getByStatus = async(req,res)=>{
+  const user = req.userAuth;
+  if (!user) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
   try {
     const { status } = req.params;
     if (!["Pending", "Shipped", "Delivered", "Canceled"].includes(status)) {
@@ -118,6 +134,10 @@ export const getByStatus = async(req,res)=>{
 };
 
 export const shipShipment = async (req, res) => {
+  const user = req.userAuth;
+  if (!user) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
   try {
     const shipmentId = req.params.shipmentId;
     const shippedShipment = await ShipmentModel.findByIdAndUpdate(
@@ -138,6 +158,10 @@ export const shipShipment = async (req, res) => {
 };
 
 export const deliverShipment = async (req, res) => {
+  const user = req.userAuth;
+  if (!user) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
   try {
     const shipmentId = req.params.shipmentId;
     const deliveredShipment = await ShipmentModel.findByIdAndUpdate(

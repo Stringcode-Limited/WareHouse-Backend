@@ -9,7 +9,7 @@ supplyRoute.post('/new-supplier', loggedIn, isAdmin, createSupplier);
 
 supplyRoute.get('/all-suppliers', loggedIn, isAdmin, allSuppliers);
 
-supplyRoute.post('/new-product/:supplierId', loggedIn, isAdmin, addProductForSupplier);
+supplyRoute.post('/new-product/:supplierName', loggedIn, isAdmin, addProductForSupplier);
 
 supplyRoute.get('/getSupplier/:supplierId', loggedIn, isAdmin, getSupplierById);
 
