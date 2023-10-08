@@ -69,11 +69,10 @@ export const addProductForSupplier = async (req, res) => {
   if (!user) {
     return res.status(401).json({ error: "Unauthorized" });
   }
-
   try {
-    const supplierId = req.params.supplierId;
+    const supplierName = req.params.supplierName;
     const { productName, expectedQuantity, expectedDate, fee } = req.body;
-    const supplier = await SupplierModel.findById(supplierId);
+    const supplier = await SupplierModel.findOne({ name: supplierName });
     if (!supplier) {
       return res.status(404).json({ message: "Supplier not found" });
     }
