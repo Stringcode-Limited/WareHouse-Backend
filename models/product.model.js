@@ -32,7 +32,7 @@ const productSchema = new mongoose.Schema({
         type: Date,
     },
     lastSupplied: {
-        date: Date,
+         type: Date,
     },
     barcode:{ 
         type: String,
@@ -41,8 +41,7 @@ const productSchema = new mongoose.Schema({
         type: Number,
     },
     supplier: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Supplier',
+        type: String,
       },
 })
 

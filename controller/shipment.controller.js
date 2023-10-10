@@ -10,7 +10,9 @@ export const createShipment = async (req, res) => {
     const { products, shipmentStatus, shipmentDate, recipient, deliveryFee } =
       req.body;
     if (!products || products.length === 0) {
-      return res.status(400).json({ error: 'No products specified for shipment' });
+      return res
+        .status(400)
+        .json({ error: "No products specified for shipment" });
     }
     let totalProductPrice = 0;
     for (const product of products) {
@@ -20,7 +22,10 @@ export const createShipment = async (req, res) => {
           error: `Product not found for ID: ${product.productId}`,
         });
       }
-      if (product.quantity > existingProduct.quantity  || product.quantity === 0) {
+      if (
+        product.quantity > existingProduct.quantity ||
+        product.quantity === 0
+      ) {
         return res.status(400).json({
           error: `Insufficient stock for product: ${existingProduct.name}`,
         });
@@ -32,13 +37,13 @@ export const createShipment = async (req, res) => {
     }
 
     if (isNaN(deliveryFee)) {
-      return res.status(400).json({ error: 'Invalid deliveryFee value' });
+      return res.status(400).json({ error: "Invalid deliveryFee value" });
     }
 
     const totalFees = totalProductPrice + deliveryFee;
 
     if (isNaN(totalFees)) {
-      return res.status(400).json({ error: 'Invalid totalFees value' });
+      return res.status(400).json({ error: "Invalid totalFees value" });
     }
     const shipment = new ShipmentModel({
       products,
@@ -51,13 +56,10 @@ export const createShipment = async (req, res) => {
     const newShipment = await shipment.save();
     res.status(201).json(newShipment);
   } catch (error) {
-    console.error('Error creating shipment:', error);
-    res.status(500).json({ error: 'Unable to create shipment' });
+    console.error("Error creating shipment:", error);
+    res.status(500).json({ error: "Unable to create shipment" });
   }
 };
-
-
-
 
 export const cancelShipment = async (req, res) => {
   const user = req.userAuth;
@@ -84,7 +86,7 @@ export const cancelShipment = async (req, res) => {
   }
 };
 
-export const getAllShipments = async(req,res)=>{
+export const getAllShipments = async (req, res) => {
   const user = req.userAuth;
   if (!user) {
     return res.status(401).json({ error: "Unauthorized" });
@@ -103,9 +105,9 @@ export const getAllShipments = async(req,res)=>{
       message: "Internal Server Error",
     });
   }
-}
+};
 
-export const getByStatus = async(req,res)=>{
+export const getByStatus = async (req, res) => {
   const user = req.userAuth;
   if (!user) {
     return res.status(401).json({ error: "Unauthorized" });
@@ -178,23 +180,22 @@ export const deliverShipment = async (req, res) => {
   }
 };
 
-
 export const averageAmountPerMonth = async (req, res) => {
   try {
     const pipeline = [
       {
         $group: {
           _id: {
-            year: { $year: '$shipmentDate' },
-            month: { $month: '$shipmentDate' },
+            year: { $year: "$shipmentDate" },
+            month: { $month: "$shipmentDate" },
           },
-          totalAmount: { $sum: '$totalFees' },
+          totalAmount: { $sum: "$totalFees" },
         },
       },
       {
         $group: {
           _id: null,
-          averageAmount: { $avg: '$totalAmount' },
+          averageAmount: { $avg: "$totalAmount" },
         },
       },
     ];
@@ -206,10 +207,11 @@ export const averageAmountPerMonth = async (req, res) => {
     res.json({ averageAmount });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Unable to calculate average amount per month' });
+    res
+      .status(500)
+      .json({ error: "Unable to calculate average amount per month" });
   }
 };
-
 
 export const totalAmountForToday = async (req, res) => {
   try {
@@ -244,8 +246,6 @@ export const totalAmountForToday = async (req, res) => {
   }
 };
 
-
-
 export const shipmentInLastWeek = async (req, res) => {
   try {
     const currentDate = new Date();
@@ -270,11 +270,9 @@ export const shipmentInLastWeek = async (req, res) => {
     res.json({ latestShipments: formattedShipments, totalLatestShipments });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Unable to fetch the latest shipments' });
+    res.status(500).json({ error: "Unable to fetch the latest shipments" });
   }
 };
-
-
 
 export const shipmentsForLast30Days = async (req, res) => {
   try {
@@ -290,12 +288,21 @@ export const shipmentsForLast30Days = async (req, res) => {
   }
 };
 
-
 export const totalShipmentsByMonth = async (req, res) => {
   try {
     const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
     ];
     const totalShipmentsByMonth = [];
     for (let month = 0; month < 12; month++) {
@@ -306,7 +313,7 @@ export const totalShipmentsByMonth = async (req, res) => {
       });
       totalShipmentsByMonth.push({
         month: monthNames[month],
-        totalShipments: totalShipments
+        totalShipments: totalShipments,
       });
     }
     res.json(totalShipmentsByMonth);
@@ -314,8 +321,6 @@ export const totalShipmentsByMonth = async (req, res) => {
     res.status(500).json({ error: "Unable to calculate total shipments" });
   }
 };
-
-
 
 export const AverageShipmentsPerMonth = async (req, res) => {
   try {
@@ -331,12 +336,13 @@ export const AverageShipmentsPerMonth = async (req, res) => {
     const averageShipmentsPerDay = totalShipments / currentDay;
     res.json({ averageShipmentsPerDay });
   } catch (error) {
-    res.status(500).json({ error: "Unable to calculate average shipments for the current month" });
+    res
+      .status(500)
+      .json({
+        error: "Unable to calculate average shipments for the current month",
+      });
   }
 };
-
-
-
 
 export const TotalShipmentsForCurrentDay = async (req, res) => {
   try {
@@ -350,7 +356,6 @@ export const TotalShipmentsForCurrentDay = async (req, res) => {
     res.status(500).json({ error: "Unable to calculate total shipments" });
   }
 };
-
 
 export const totalAmountForPeriod = async (req, res) => {
   try {
@@ -366,7 +371,7 @@ export const totalAmountForPeriod = async (req, res) => {
       {
         $group: {
           _id: null,
-          totalAmount: { $sum: '$totalFees' },
+          totalAmount: { $sum: "$totalFees" },
         },
       },
     ]);
@@ -376,6 +381,6 @@ export const totalAmountForPeriod = async (req, res) => {
     res.json({ totalAmount: totalAmount[0].totalAmount });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Unable to calculate total amount' });
+    res.status(500).json({ error: "Unable to calculate total amount" });
   }
 };

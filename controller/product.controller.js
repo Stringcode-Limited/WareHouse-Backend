@@ -14,12 +14,14 @@ export const createProduct = async (req, res) => {
       barcode,
       weight,
       supplierName,
-    } = req.body; 
+    } = req.body;
+
     let supplier = await SupplierModel.findOne({ name: supplierName });
     if (!supplier) {
       return res.status(404).json({ message: 'Supplier not found' });
     }
-    let product = await ProductModel.findOne({ name, supplier: supplier._id });
+
+    let product = await ProductModel.findOne({ name, supplier: supplier.name });
     if (!product) {
       const image = req.file ? req.file.path : 'default-image-path.jpg';
       product = new ProductModel({
@@ -31,31 +33,23 @@ export const createProduct = async (req, res) => {
         category,
         availability: 'Available',
         expirationDate,
-        lastSupplied: { date: new Date() },
+        lastSupplied: new Date().toISOString(),
         barcode,
         weight,
-        supplier: supplier._id,
+        supplier: supplier.name,
       });
     } else {
       product.quantity += quantity;
-      product.lastSupplied = { date: new Date() };
+      product.lastSupplied = new Date().toISOString();
     }
     const newProduct = await product.save();
-    if (supplier) {
-      const productToMatch = supplier.suppliedProducts.find(
-        (productInfo) => productInfo.productName === name
-      ); 
-      if (productToMatch) {
-        productToMatch.dateDelivered = new Date();
-        productToMatch.status = 'Delivered';
-      }
-    }
     res.status(201).json(newProduct);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Unable to create/update product' });
   }
 };
+
 
 
 
