@@ -39,7 +39,7 @@ export const allSuppliers = async(req,res)=>{
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Unable to fetch suppliers' });
-  }
+  } 
 }
 
 export const getSupplierById = async (req, res) => {

@@ -168,15 +168,18 @@ export const deliverShipment = async (req, res) => {
     const shipmentId = req.params.shipmentId;
     const deliveredShipment = await ShipmentModel.findByIdAndUpdate(
       shipmentId,
-      { shipmentStatus: "Delivered" },
+      { shipmentStatus: "Canceled" },
       { new: true }
     );
     if (!deliveredShipment) {
       return res.status(404).json({ message: "Shipment not found." });
     }
-    res.json({ message: "Shipment delivered successfully." });
+    res.status({
+      data: "Success",
+      message: "Shipment delivered successfully.",
+    });
   } catch (error) {
-    res.status(500).json({ error: "Unable to deliver shipment" });
+    res.status(500).json({ error: "Unable to cancel shipment" });
   }
 };
 
