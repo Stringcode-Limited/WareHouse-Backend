@@ -61,31 +61,6 @@ export const createShipment = async (req, res) => {
   }
 };
 
-export const cancelShipment = async (req, res) => {
-  const user = req.userAuth;
-  if (!user) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-  try {
-    const shipmentId = req.params.shipmentId;
-    const canceledShipment = await ShipmentModel.findByIdAndUpdate(
-      shipmentId,
-      { shipmentStatus: "Canceled" },
-      { new: true }
-    );
-    if (!canceledShipment) {
-      return res.status(404).json({ message: "Shipment not found." });
-    }
-
-    res.status({
-      data: "Success",
-      message: "Shipment canceled successfully.",
-    });
-  } catch (error) {
-    res.status(500).json({ error: "Unable to cancel shipment" });
-  }
-};
-
 export const getAllShipments = async (req, res) => {
   const user = req.userAuth;
   if (!user) {
@@ -159,6 +134,34 @@ export const shipShipment = async (req, res) => {
   }
 };
 
+export const cancelShipment = async (req, res) => {
+  const user = req.userAuth;
+  if (!user) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  try {
+    const shipmentId = req.params.shipmentId;
+    const shipment = await ShipmentModel.findById(shipmentId);
+    if (!shipment) {
+      return res.status(404).json({ message: "Shipment not found." });
+    }
+    if (shipment.shipmentStatus === "Canceled") {
+      return res.status(200).json({ message: "Shipment is already canceled." });
+    }
+    const canceledShipment = await ShipmentModel.findByIdAndUpdate(
+      shipmentId,
+      { shipmentStatus: "Canceled" },
+      { new: true }
+    );
+    res.status(200).json({
+      data: canceledShipment,
+      message: "Shipment canceled successfully.",
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Unable to cancel shipment" });
+  }
+};
+
 export const deliverShipment = async (req, res) => {
   const user = req.userAuth;
   if (!user) {
@@ -166,20 +169,24 @@ export const deliverShipment = async (req, res) => {
   }
   try {
     const shipmentId = req.params.shipmentId;
-    const deliveredShipment = await ShipmentModel.findByIdAndUpdate(
-      shipmentId,
-      { shipmentStatus: "Canceled" },
-      { new: true }
-    );
-    if (!deliveredShipment) {
+    const shipment = await ShipmentModel.findById(shipmentId);
+    if (!shipment) {
       return res.status(404).json({ message: "Shipment not found." });
     }
-    res.status({
-      data: "Success",
+    if (shipment.shipmentStatus === "Delivered") {
+      return res.status(200).json({ message: "Shipment is already delivered." });
+    }
+    const deliveredShipment = await ShipmentModel.findByIdAndUpdate(
+      shipmentId,
+      { shipmentStatus: "Delivered" },
+      { new: true }
+    );
+    res.status(200).json({
+      data: deliveredShipment,
       message: "Shipment delivered successfully.",
     });
   } catch (error) {
-    res.status(500).json({ error: "Unable to cancel shipment" });
+    res.status(500).json({ error: "Unable to deliver shipment" });
   }
 };
 
