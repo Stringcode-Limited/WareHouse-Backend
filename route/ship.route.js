@@ -15,12 +15,15 @@ import {
 } from '../controller/shipment.controller.js';
 import { loggedIn } from '../middleware/loginAccess.js';
 import { isAdmin } from '../middleware/admin.js';
+import { getShipmentItems } from './../controller/shipment.controller.js';
 
 const shipmentRouter = express.Router();
 
 shipmentRouter.post('/create', loggedIn, isAdmin, createShipment);
 
 shipmentRouter.get('/all-shipments', loggedIn, isAdmin, getAllShipments);
+
+shipmentRouter.get('/ship-items/:shipmentId', loggedIn, isAdmin, getShipmentItems);
 
 shipmentRouter.get('/byStatus',  loggedIn, isAdmin, getByStatus);
 

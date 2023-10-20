@@ -82,6 +82,39 @@ export const getAllShipments = async (req, res) => {
   }
 };
 
+export const getShipmentItems = async (req, res) => {
+  const user = req.userAuth;
+  if (!user) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  const { shipmentId } = req.params;
+  try {
+    const shipment = await ShipmentModel.findById(shipmentId).lean();
+    if (!shipment) {
+      return res.status(404).json({ error: "Shipment not found" });
+    }
+    const productsInShipment = [];
+    for (const product of shipment.products) {
+      const productData = await ProductModel.findById(product.productId).lean();
+      if (!productData) {
+        continue;
+      }
+      productsInShipment.push({
+        productId: productData._id,
+        productName: productData.name,
+        quantity: product.quantity,
+      });
+    }
+    res.json(productsInShipment);
+  } catch (error) {
+    console.error("Error retrieving products for shipment:", error);
+    res.status(500).json({
+      error: "Unable to retrieve products for the shipment",
+    });
+  }
+};
+
+
 export const getByStatus = async (req, res) => {
   const user = req.userAuth;
   if (!user) {
@@ -229,8 +262,6 @@ export const totalAmountForToday = async (req, res) => {
     today.setHours(0, 0, 0, 0);
     const endDate = new Date();
     endDate.setHours(23, 59, 59, 999);
-    // console.log("Today:", today);
-    // console.log("End Date:", endDate);
     const totalAmount = await ShipmentModel.aggregate([
       {
         $match: {
