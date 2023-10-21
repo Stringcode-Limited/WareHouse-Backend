@@ -35,7 +35,11 @@ export const allSuppliers = async(req,res)=>{
     return res.status(401).json({ error: "Unauthorized" });
   }try {
     const suppliers = await SupplierModel.find();
-    res.status(200).json({ suppliers });
+    res.json({
+      status: "success",
+      message: "Suppliers retrieved successfully",
+      data: suppliers,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Unable to fetch suppliers' });
@@ -188,5 +192,63 @@ export const getSuppliersStat = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Unable to fetch supplied products" });
+  }
+};
+
+
+export const updateSupplierBasicInfo = async (req, res) => {
+  const userId = req.userAuth;
+  if (!userId) {
+    return res.status(404).json({ message: "User not found." });
+  }
+  try {
+    const supplierId = req.params.supplierId;
+    const updatedFields = req.body;
+    const updatedSupplier = await SupplierModel.findByIdAndUpdate(
+      supplierId,
+      updatedFields,
+      { new: true }
+    );
+    if (!updatedSupplier) {
+      return res.status(404).json({ message: "Supplier not found." });
+    }
+    res.json({
+      status: "Success",
+      data: updatedSupplier,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const updateSupplierSuppliedProducts = async (req, res) => {
+  const userId = req.userAuth;
+  if (!userId) {
+    return res.status(404).json({ message: "User not found." });
+  }
+  try {
+    const supplierId = req.params.supplierId;
+    const productId = req.params.productId;
+    const updatedFields = req.body;
+    const updatedSupplier = await SupplierModel.findOneAndUpdate(
+      { _id: supplierId, "suppliedProducts._id": productId },
+      {
+        $set: {
+          "suppliedProducts.$": updatedFields,
+        },
+      },
+      { new: true }
+    );
+    if (!updatedSupplier) {
+      return res.status(404).json({ message: "Supplier or Product not found." });
+    }
+    res.json({
+      status: "Success",
+      data: updatedSupplier,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
