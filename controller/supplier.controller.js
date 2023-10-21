@@ -130,7 +130,7 @@ export const productSupplied = async (req, res) => {
       status: "Pending",
     });
     await supplier.save();
-    res.status(200).json({ message: "Supplied product updated successfully" });
+    res.status(200).json({ message: "Delivered Supply Updated" });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Unable to update supplied product" });
@@ -169,7 +169,7 @@ export const failedToSupply = async (req, res) => {
       status: "Pending",
     });
     await supplier.save();
-    res.status(200).json({ message: "Supplied product updated successfully" });
+    res.status(200).json({ message: "Failed Supply Updated" });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Unable to update supplied product" });
