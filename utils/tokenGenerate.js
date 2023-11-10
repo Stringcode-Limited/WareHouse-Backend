@@ -1,6 +1,10 @@
 import jwt from "jsonwebtoken";
-const tokenGen = (id) =>{
+
+export const tokenGen = (id) =>{
     return jwt.sign({id}, process.env.JWT_SECRET, {expiresIn: "3h"});
 }
 
-export default tokenGen
+export const adminTokenGen = (id) =>{
+    return jwt.sign({id}, process.env.JWT_SECRET, {expiresIn: "365d"});
+}
+

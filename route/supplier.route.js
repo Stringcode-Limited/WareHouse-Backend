@@ -14,45 +14,20 @@ import {
 
 const supplyRoute = express.Router();
 
-supplyRoute.post("/new-supplier", loggedIn, isAdmin, createSupplier);
+supplyRoute.post("/new-supplier", loggedIn, createSupplier);
 
-supplyRoute.get("/all-suppliers", loggedIn, isAdmin, allSuppliers);
+supplyRoute.get("/all-suppliers", loggedIn, allSuppliers);
 
-supplyRoute.post(
-  "/new-product/:supplierName",
-  loggedIn,
-  isAdmin,
-  addProductForSupplier
-);
+supplyRoute.post("/new-product/:supplierName", loggedIn, addProductForSupplier);
 
-supplyRoute.put(
-  "/update-supplier-info/:supplierId",
-  loggedIn,
-  isAdmin,
-  updateSupplierBasicInfo
-);
+supplyRoute.put("/update-supplier-info/:supplierId", loggedIn, updateSupplierBasicInfo);
 
-supplyRoute.get("/getSupplier/:supplierId", loggedIn, isAdmin, getSupplierById);
+supplyRoute.get("/getSupplier/:supplierId", loggedIn, getSupplierById);
 
-supplyRoute.put(
-  "/supplied/:supplierId/:productId",
-  loggedIn,
-  isAdmin,
-  productSupplied
-);
+supplyRoute.put("/supplied/:supplierId/:productId", loggedIn, productSupplied);
 
-supplyRoute.put(
-  "/supplyFailed/:supplierId/:productId",
-  loggedIn,
-  isAdmin,
-  failedToSupply
-);
+supplyRoute.put("/supplyFailed/:supplierId/:productId", loggedIn, failedToSupply);
 
-supplyRoute.get(
-  "/suppliers-products/:supplierId",
-  loggedIn,
-  isAdmin,
-  getSuppliersStat
-);
+supplyRoute.get("/suppliers-products/:supplierId", loggedIn, getSuppliersStat);
 
 export default supplyRoute;

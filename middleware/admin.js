@@ -1,4 +1,4 @@
-import UserModel from './../models/user.model.js';
+import UserModel from '../models/employee.model.js';
 
 export const isAdmin = (req, res, next) => {
   if (!req.userAuth) {

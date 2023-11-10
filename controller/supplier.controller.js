@@ -1,14 +1,13 @@
+import AdminModel from "../models/admin.model.js";
+import EmployeeMod from "../models/employee.model.js";
 import SupplierModel from "../models/supplier.model.js";
 
 export const createSupplier = async (req, res) => {
-  const user = req.userAuth;
-  if (!user) {
+  const userId = req.userAuth;
+  if (!userId) {
     return res.status(401).json({ error: "Unauthorized" });
   }
   try {
-    if (!req.userAuth) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
     const { name, contactInformation, suppliedProducts } = req.body;
     if (!contactInformation || !contactInformation.email) {
       return res.status(400).json({ error: "Invalid contact information" });
@@ -16,46 +15,71 @@ export const createSupplier = async (req, res) => {
     if (!Array.isArray(suppliedProducts)) {
       return res.status(400).json({ error: "Invalid supplied products data" });
     }
-    const supplier = new SupplierModel({
+    const newSupplier = new SupplierModel({
       name,
       contactInformation,
       suppliedProducts,
     });
-    await supplier.save();
-    res.status(201).json({ message: "Supplier created successfully" });
+    await newSupplier.save();
+    const employee = await EmployeeMod.findById(userId).populate('superAdminId');
+    if (employee && employee.superAdminId) {
+      const superAdmin = await AdminModel.findById(employee.superAdminId);
+      if (superAdmin) {
+        superAdmin.suppliers.push(newSupplier._id);
+        await superAdmin.save();
+        return res.status(201).json({ message: "New supplier has been added successfully." });
+      }
+    } else {
+      const superAdmin = await AdminModel.findById(userId);
+      if (superAdmin) {
+        superAdmin.suppliers.push(newSupplier._id);
+        await superAdmin.save();
+        return res.status(201).json({ message: "New supplier has been added successfully." });
+      } else {
+        return res.status(404).json({ message: "SuperAdmin not found." });
+      }
+    }
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Unable to create supplier" });
+    console.error("Error:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
-export const allSuppliers = async(req,res)=>{
-  const user = req.userAuth;
-  if (!user) {
+export const allSuppliers = async (req, res) => {
+  const userId = req.userAuth;
+  if (!userId) {
     return res.status(401).json({ error: "Unauthorized" });
-  }try {
-    const suppliers = await SupplierModel.find();
-    res.json({
-      status: "success",
-      message: "Suppliers retrieved successfully",
-      data: suppliers,
-    });
+  }
+  try {
+    let suppliers;
+    const employee = await EmployeeMod.findById(userId).populate('superAdminId');
+    if (employee && employee.superAdminId) {
+      const superAdmin = await AdminModel.findById(employee.superAdminId);
+      if (superAdmin) {
+        suppliers = await SupplierModel.find({ _id: { $in: superAdmin.suppliers } });
+      }
+    } else {
+      const superAdmin = await AdminModel.findById(userId);
+      if (superAdmin) {
+        suppliers = await SupplierModel.find({ _id: { $in: superAdmin.suppliers } });
+      } else {
+        return res.status(404).json({ message: "SuperAdmin not found." });
+      }
+    }
+    res.status(200).json({ suppliers });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Unable to fetch suppliers' });
-  } 
-}
+    console.error("Error:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 
 export const getSupplierById = async (req, res) => {
   const user = req.userAuth;
   if (!user) {
     return res.status(401).json({ error: "Unauthorized" });
   }
-
   try {
-    if (!req.userAuth) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
     const { supplierId } = req.params;
     const supplier = await SupplierModel.findById(supplierId);
     if (!supplier) {

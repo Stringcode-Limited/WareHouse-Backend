@@ -10,7 +10,7 @@ const productSchema = new mongoose.Schema({
     },
     image: {
         type: String,
-        required: true,
+        // required: true,
     },
     price: {
         type: Number,
@@ -26,7 +26,7 @@ const productSchema = new mongoose.Schema({
     },
     availability: {
         type: String,
-        enum: ["Available","Out-of-Stock"]
+        enum: ["Available","Out-of-Stock", "Expired", "Dead Stock"]
     },
     expirationDate: {
         type: Date,
@@ -42,9 +42,9 @@ const productSchema = new mongoose.Schema({
     },
     supplier: {
         type: String,
-      },
+    },
 })
 
 const ProductModel = mongoose.model("Product", productSchema)
 
-export default ProductModel; 
+export default ProductModel;  

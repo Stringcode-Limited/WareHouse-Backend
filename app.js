@@ -3,9 +3,13 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import { mongoDB } from './config/database.js';
 import productRouter from './route/product.route.js';
-import adminRouter from './route/auth.route.js';
-import shipmentRouter from './route/ship.route.js';
+import personnelRouter from './route/personnel.route.js';
+import invoiceRouter from './route/invoice.route.js';
 import supplyRoute from './route/supplier.route.js';
+import adminRouter from './route/admin.route.js';
+import taxRouter from './route/tax.route.js';
+import expenseRouter from './route/expense.route.js';
+
 
 dotenv.config();
 mongoDB();
@@ -29,9 +33,12 @@ app.use((req, res, next) => {
 });
 
 app.use('/api/v1/product', productRouter);
-app.use('/api/v1/admin', adminRouter);
-app.use('/api/v1/admin-ship', shipmentRouter);
+app.use('/api/v1/personnel', personnelRouter);
+app.use('/api/v1/invoice', invoiceRouter);
 app.use('/api/v1/supply', supplyRoute);
+app.use('/api/v1/setup', adminRouter);
+app.use('/api/v1/rates', taxRouter); 
+app.use('/api/v1/expense', expenseRouter);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

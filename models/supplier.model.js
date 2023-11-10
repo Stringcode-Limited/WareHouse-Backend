@@ -47,6 +47,12 @@ const supplierSchema = new mongoose.Schema({
                 enum: ["Pending", "Delivered", "Canceled"],
                 default: "Pending",
             },
+            isSupplyOnLoan:{
+                type: Boolean,
+            },
+            returnDate: {
+                type: Date,
+            }
         },
     ],
 });
