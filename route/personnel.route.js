@@ -2,11 +2,9 @@ import express from 'express';
 import multer from 'multer';
 import { isAdmin } from '../middleware/admin.js';
 import { loggedIn } from '../middleware/loginAccess.js';
-import { createEmployee, updatePassword, updateUser, registerCustomer, getAllEmployees, logIn, getAllCustomers, editCustomer, createCreditCase, getCustomerCredit, settleCreditCase, getCustomerById, getCustomerInvoice, getEmployeeById, editStaff, deleteStaff } from '../controller/personnel.controller.js';
-import { profilePictureStorage }  from '../config/cloudinary.js';
+import { createEmployee, updatePassword, updateUser, registerCustomer, getAllEmployees, logIn, getAllCustomers, editCustomer, getCustomerById, getCustomerInvoice, getEmployeeById, editStaff, deleteStaff, getUserById } from '../controller/personnel.controller.js';
 
 const personnelRouter = express.Router();
-const profilePictureUpload = multer({ storage: profilePictureStorage });
 
 personnelRouter.post('/new-employee', loggedIn, createEmployee);
 
@@ -30,15 +28,11 @@ personnelRouter.get('/get-customer/:customerId', loggedIn, getCustomerById);
 
 personnelRouter.get('/customer-invoice/:customerId', loggedIn, getCustomerInvoice);
 
-personnelRouter.post('/create-credit-case/:customerId', loggedIn, createCreditCase);
+personnelRouter.put('/update-password', loggedIn, updatePassword);
 
-personnelRouter.get('/customers-credit/:customerId', loggedIn, getCustomerCredit);
+personnelRouter.put('/update-profile', loggedIn, updateUser);
 
-personnelRouter.put('/settle-credit/:creditCaseId', loggedIn, settleCreditCase);
-
-personnelRouter.put('/update-password', isAdmin, loggedIn, updatePassword);
-
-personnelRouter.put('/update-profile', isAdmin, loggedIn, updateUser);
+personnelRouter.get('/get-user', loggedIn, getUserById);
 
 
 export default personnelRouter;
