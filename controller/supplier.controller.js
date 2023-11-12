@@ -8,17 +8,13 @@ export const createSupplier = async (req, res) => {
     return res.status(401).json({ error: "Unauthorized" });
   }
   try {
-    const { name, contactInformation, suppliedProducts } = req.body;
+    const { name, contactInformation } = req.body;
     if (!contactInformation || !contactInformation.email) {
       return res.status(400).json({ error: "Invalid contact information" });
-    }
-    if (!Array.isArray(suppliedProducts)) {
-      return res.status(400).json({ error: "Invalid supplied products data" });
     }
     const newSupplier = new SupplierModel({
       name,
       contactInformation,
-      suppliedProducts,
     });
     await newSupplier.save();
     const employee = await EmployeeMod.findById(userId).populate('superAdminId');
@@ -98,107 +94,38 @@ export const addProductForSupplier = async (req, res) => {
     return res.status(401).json({ error: "Unauthorized" });
   }
   try {
-    const supplierName = req.params.supplierName;
-    const { productName, expectedQuantity, expectedDate, fee } = req.body;
-    const supplier = await SupplierModel.findOne({ name: supplierName });
+    const { supplierName, productName, dateDelivered, quantityDelivered, unitPrice, amountPaid } = req.body;
+    const totalFee = unitPrice * quantityDelivered;
+    let supplier = await SupplierModel.findOne({ name: supplierName });
     if (!supplier) {
-      return res.status(404).json({ message: "Supplier not found" });
+      supplier = new SupplierModel({
+        name: supplierName,
+        suppliedProducts: [],
+      });
     }
+    const balance = totalFee - amountPaid;
     supplier.suppliedProducts.push({
       productName,
-      expectedQuantity,
-      expectedDate,
-      dateDelivered: null,
-      quantityDelivered: 0,
-      fee,
-      status: "Pending",
+      dateDelivered,
+      quantityDelivered,
+      unitPrice,
+      totalFee,
+      status: "Supplied",
+      balance,
+      amountPaid,
+      suppliedPay: balance === 0 ? "Fully Paid" : "On-Loan",
     });
     await supplier.save();
-    res.status(201).json({ message: "Supplied product added successfully" });
+    res.status(201).json({ message: "Supplied product Recorded" });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Unable to add supplied product" });
   }
 };
 
-export const productSupplied = async (req, res) => {
-  const user = req.userAuth;
-  if (!user) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-  try {
-    const { supplierId, productId } = req.params;
-    const { quantityDelivered, newExpectedQuantity, newExpectedDate, newFee } =
-      req.body;
-    const supplier = await SupplierModel.findById(supplierId);
-    if (!supplier) {
-      return res.status(404).json({ message: "Supplier not found" });
-    }
-    const suppliedProduct = supplier.suppliedProducts.find(
-      (product) => product._id == productId
-    );
-    if (!suppliedProduct) {
-      return res.status(404).json({ message: "Supplied product not found" });
-    }
-    suppliedProduct.quantityDelivered = quantityDelivered;
-    suppliedProduct.status = "Delivered";
-    suppliedProduct.dateDelivered = new Date();
-    await supplier.save();
-    supplier.suppliedProducts.push({
-      productName: suppliedProduct.productName,
-      expectedQuantity: newExpectedQuantity,
-      expectedDate: newExpectedDate,
-      dateDelivered: null,
-      quantityDelivered: 0,
-      fee: newFee,
-      status: "Pending",
-    });
-    await supplier.save();
-    res.status(200).json({ message: "Delivered Supply Updated" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Unable to update supplied product" });
-  }
-};
 
-export const failedToSupply = async (req, res) => {
-  const user = req.userAuth;
-  if (!user) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-  try {
-    const { supplierId, productId } = req.params;
-    const { newExpectedQuantity, newExpectedDate, newFee } = req.body;
-    const supplier = await SupplierModel.findById(supplierId);
-    if (!supplier) {
-      return res.status(404).json({ message: "Supplier not found" });
-    }
-    const suppliedProduct = supplier.suppliedProducts.find(
-      (product) => product._id == productId
-    );
-    if (!suppliedProduct) {
-      return res.status(404).json({ message: "Supplied product not found" });
-    }
-    suppliedProduct.quantityDelivered = 0;
-    suppliedProduct.status = "Canceled";
-    suppliedProduct.dateDelivered = null;
-    await supplier.save();
-    supplier.suppliedProducts.push({
-      productName: suppliedProduct.productName,
-      expectedQuantity: newExpectedQuantity,
-      expectedDate: newExpectedDate,
-      dateDelivered: null,
-      quantityDelivered: 0,
-      fee: newFee,
-      status: "Pending",
-    });
-    await supplier.save();
-    res.status(200).json({ message: "Failed Supply Updated" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Unable to update supplied product" });
-  }
-};
+
+
 
 export const getSuppliersStat = async (req, res) => {
   const user = req.userAuth;
@@ -246,33 +173,3 @@ export const updateSupplierBasicInfo = async (req, res) => {
   }
 };
 
-export const updateSupplierSuppliedProducts = async (req, res) => {
-  const userId = req.userAuth;
-  if (!userId) {
-    return res.status(404).json({ message: "User not found." });
-  }
-  try {
-    const supplierId = req.params.supplierId;
-    const productId = req.params.productId;
-    const updatedFields = req.body;
-    const updatedSupplier = await SupplierModel.findOneAndUpdate(
-      { _id: supplierId, "suppliedProducts._id": productId },
-      {
-        $set: {
-          "suppliedProducts.$": updatedFields,
-        },
-      },
-      { new: true }
-    );
-    if (!updatedSupplier) {
-      return res.status(404).json({ message: "Supplier or Product not found." });
-    }
-    res.json({
-      status: "Success",
-      data: updatedSupplier,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Internal Server Error" });
-  }
-};

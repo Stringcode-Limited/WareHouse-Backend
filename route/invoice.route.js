@@ -2,6 +2,7 @@ import express from 'express';
 import { loggedIn } from '../middleware/loginAccess.js';
 import { isAdmin } from '../middleware/admin.js';
 import { createInvoice, getAllInvoices, getInvoiceItems, paidInvoice, unpaidInvoice } from './../controller/invoice.controller.js';
+import { getAllSalesReports } from '../controller/report.controller.js';
 
 const invoiceRouter = express.Router();
 
@@ -14,6 +15,8 @@ invoiceRouter.get('/invoice-items/:invoiceId', loggedIn, getInvoiceItems);
 invoiceRouter.put('/unpaid/:invoiceId', loggedIn, unpaidInvoice); 
 
 invoiceRouter.put('/paid/:invoiceId', loggedIn, paidInvoice);
+
+invoiceRouter.get('/sales-report', loggedIn, getAllSalesReports);
 
 // shipmentRouter.get('/latest-shipments', loggedIn, isAdmin, shipmentInLastWeek);
 

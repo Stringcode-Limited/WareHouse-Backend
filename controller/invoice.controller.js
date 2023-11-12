@@ -5,6 +5,7 @@ import AdminModel from "../models/admin.model.js";
 import DiscountMod from './../models/discount.model.js';
 import TaxModel from './../models/tax.model.js';
 import EmployeeMod from "../models/employee.model.js";
+import { createSalesReport } from './report.controller.js';
 
 export const createInvoice = async (req, res) => {
   const userId = req.userAuth;
@@ -18,12 +19,10 @@ export const createInvoice = async (req, res) => {
       discountName,
       taxName,
       issuedDate,
+      invoiceType,
       dueDate
     } = req.body;
     const existingCustomer = await CustomerModel.findOne({ name: customer });
-    if (!existingCustomer) {
-      return res.status(400).json({ error: 'Customer not found.' });
-    }
     let total = 0;
     for (const product of products) {
       const { productName, quantity } = product;
@@ -55,11 +54,11 @@ export const createInvoice = async (req, res) => {
       issuedDate,
       dueDate,
       customer,
+      invoiceType,
       discount: discount ? discount.value : 0,
       tax: tax ? tax.rate : 0,
       issuedBy,
       total: calculatedTotal,
-      isProductOnLoan: false
     });
     await newInvoice.save();
     existingCustomer.invoice.push(newInvoice._id);
@@ -190,11 +189,12 @@ export const paidInvoice = async (req, res) => {
     if (invoice.status === "Paid") {
       return res.status(200).json({ message: "Invoice is already settled." });
     }
+    await createSalesReport(invoiceId,user,res);
     const unpaidInvoice = await InvoiceModel.findByIdAndUpdate(
       invoiceId,
       { status: "Paid" },
       { new: true }
-    );
+      );
     res.status(200).json({
       data: unpaidInvoice,
       message: "Invoice Settled.",
@@ -204,205 +204,61 @@ export const paidInvoice = async (req, res) => {
   }
 };
 
-// export const averageAmountPerMonth = async (req, res) => {
-//   try {
-//     const pipeline = [
-//       {
-//         $group: {
-//           _id: {
-//             year: { $year: "$shipmentDate" },
-//             month: { $month: "$shipmentDate" },
-//           },
-//           totalAmount: { $sum: "$totalFees" },
-//         },
-//       },
-//       {
-//         $group: {
-//           _id: null,
-//           averageAmount: { $avg: "$totalAmount" },
-//         },
-//       },
-//     ];
-//     const result = await ShipmentModel.aggregate(pipeline);
-//     if (result.length === 0) {
-//       return res.json({ averageAmount: 0 });
-//     }
-//     const averageAmount = result[0].averageAmount;
-//     res.json({ averageAmount });
-//   } catch (error) {
-//     console.error(error);
-//     res
-//       .status(500)
-//       .json({ error: "Unable to calculate average amount per month" });
-//   }
-// };
 
-// export const totalAmountForToday = async (req, res) => {
-//   try {
-//     const today = new Date();
-//     today.setHours(0, 0, 0, 0);
-//     const endDate = new Date();
-//     endDate.setHours(23, 59, 59, 999);
-//     const totalAmount = await ShipmentModel.aggregate([
-//       {
-//         $match: {
-//           shipmentDate: { $gte: today, $lte: endDate },
-//         },
-//       },
-//       {
-//         $group: {
-//           _id: null,
-//           totalAmount: { $sum: "$totalFees" },
-//         },
-//       },
-//     ]);
-//     // console.log("Total Amount:", totalAmount);
-//     if (totalAmount.length > 0) {
-//       res.json({ totalAmount: totalAmount[0].totalAmount });
-//     } else {
-//       res.json({ totalAmount: 0 });
-//     }
-//   } catch (error) {
-//     console.error("Error:", error);
-//     res.status(500).json({ error: "Unable to calculate total amount" });
-//   }
-// };
 
-// export const shipmentInLastWeek = async (req, res) => {
-//   try {
-//     const currentDate = new Date();
-//     const sevenDaysAgo = new Date(currentDate);
-//     sevenDaysAgo.setDate(currentDate.getDate() - 7);
-//     const [latestShipments, totalLatestShipments] = await Promise.all([
-//       ShipmentModel.find({
-//         shipmentDate: { $gte: sevenDaysAgo, $lte: currentDate },
-//       })
-//         .sort({ shipmentDate: -1 })
-//         .lean(),
-//       ShipmentModel.countDocuments({
-//         shipmentDate: { $gte: sevenDaysAgo, $lte: currentDate },
-//       }),
-//     ]);
-//     const formattedShipments = latestShipments.map((shipment) => ({
-//       shipmentId: shipment._id,
-//       shipmentDate: shipment.shipmentDate,
-//       recipient: shipment.recipient,
-//       totalFee: shipment.totalFees,
-//     }));
-//     res.json({ latestShipments: formattedShipments, totalLatestShipments });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ error: "Unable to fetch the latest shipments" });
-//   }
-// };
+export const generateSalesReport = async (req, res) => {
+  try {
+    const userId = req.userAuth;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
 
-// export const shipmentsForLast30Days = async (req, res) => {
-//   try {
-//     const endDate = new Date();
-//     const startDate = new Date();
-//     startDate.setDate(endDate.getDate() - 30);
-//     const totalShipments = await ShipmentModel.countDocuments({
-//       shipmentDate: { $gte: startDate, $lte: endDate },
-//     });
-//     res.json({ totalShipments });
-//   } catch (error) {
-//     res.status(500).json({ error: "Unable to calculate total shipments" });
-//   }
-// };
+    // Get all invoices with status 'Paid' and due date today
+    const today = new Date().toISOString().split("T")[0];
+    const invoices = await InvoiceModel.find({
+      status: 'Paid',
+      dueDate: today,
+    }).populate('products.productName');
 
-// export const totalShipmentsByMonth = async (req, res) => {
-//   try {
-//     const monthNames = [
-//       "January",
-//       "February",
-//       "March",
-//       "April",
-//       "May",
-//       "June",
-//       "July",
-//       "August",
-//       "September",
-//       "October",
-//       "November",
-//       "December",
-//     ];
-//     const totalShipmentsByMonth = [];
-//     for (let month = 0; month < 12; month++) {
-//       const startDate = new Date(new Date().getFullYear(), month, 1);
-//       const endDate = new Date(new Date().getFullYear(), month + 1, 0);
-//       const totalShipments = await ShipmentModel.countDocuments({
-//         shipmentDate: { $gte: startDate, $lte: endDate },
-//       });
-//       totalShipmentsByMonth.push({
-//         month: monthNames[month],
-//         totalShipments: totalShipments,
-//       });
-//     }
-//     res.json(totalShipmentsByMonth);
-//   } catch (error) {
-//     res.status(500).json({ error: "Unable to calculate total shipments" });
-//   }
-// };
+    const salesReport = [];
 
-// export const AverageShipmentsPerMonth = async (req, res) => {
-//   try {
-//     const currentDate = new Date();
-//     const currentYear = currentDate.getFullYear();
-//     const currentMonth = currentDate.getMonth();
-//     const currentDay = currentDate.getDate();
-//     const startDate = new Date(currentYear, currentMonth, 1);
-//     const endDate = new Date(currentYear, currentMonth + 1, 0);
-//     const totalShipments = await ShipmentModel.countDocuments({
-//       shipmentDate: { $gte: startDate, $lte: endDate },
-//     });
-//     const averageShipmentsPerDay = totalShipments / currentDay;
-//     res.json({ averageShipmentsPerDay });
-//   } catch (error) {
-//     res
-//       .status(500)
-//       .json({
-//         error: "Unable to calculate average shipments for the current month",
-//       });
-//   }
-// };
+    // Create a map to accumulate quantity and totalAmount for each product
+    const productMap = new Map();
 
-// export const TotalShipmentsForCurrentDay = async (req, res) => {
-//   try {
-//     const today = new Date();
-//     today.setHours(0, 0, 0, 0);
-//     const totalShipments = await ShipmentModel.countDocuments({
-//       shipmentDate: { $gte: today, $lte: today },
-//     });
-//     res.json({ totalShipments });
-//   } catch (error) {
-//     res.status(500).json({ error: "Unable to calculate total shipments" });
-//   }
-// };
+    // Iterate through each invoice
+    for (const invoice of invoices) {
+      // Iterate through each product in the invoice
+      for (const product of invoice.products) {
+        const productId = product.productName._id;
+        const productName = product.productName.name;
+        const quantity = product.quantity;
+        const price = product.productName.price;
+        const totalAmount = quantity * price;
 
-// export const totalAmountForPeriod = async (req, res) => {
-//   try {
-//     const { startDate, endDate } = req.params;
-//     const start = new Date(startDate);
-//     const end = new Date(endDate);
-//     const totalAmount = await InvoiceModel.aggregate([
-//       {
-//         $match: {
-//           shipmentDate: { $gte: start, $lte: end },
-//         },
-//       },
-//       {
-//         $group: {
-//           _id: null,
-//           totalAmount: { $sum: "$totalFees" },
-//         },
-//       },
-//     ]);
-//     if (totalAmount.length === 0) {
-//       return res.json({ totalAmount: 0 });
-//     }
-//     res.json({ totalAmount: totalAmount[0].totalAmount });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ error: "Unable to calculate total amount" });
-//   }
-// };
+        // Check if the product is already in the map
+        if (productMap.has(productId)) {
+          // If yes, update quantity and totalAmount
+          const existingProduct = productMap.get(productId);
+          existingProduct.quantity += quantity;
+          existingProduct.totalAmount += totalAmount;
+        } else {
+          // If not, add the product to the map
+          productMap.set(productId, {
+            productName,
+            quantity,
+            price,
+            totalAmount,
+          });
+        }
+      }
+    }
+
+    // Convert the map values to an array
+    salesReport.push(...productMap.values());
+
+    res.status(200).json(salesReport);
+  } catch (error) {
+    console.error('Error generating sales report:', error);
+    res.status(500).json({ error: 'Unable to generate sales report' });
+  }
+};

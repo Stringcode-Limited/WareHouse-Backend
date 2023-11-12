@@ -100,38 +100,21 @@ export const updateExpense = async (req, res) => {
   try {
     const expenseId = req.params.expenseId;
     const { amountPaid } = req.body;
-
+    if (amountPaid <= 0) {
+      return res.status(400).json({ message: "Amount paid must be a positive value." });
+    }
     const expense = await ExpenseMod.findById(expenseId);
-
     if (!expense) {
       return res.status(404).json({ message: "Expense not found." });
     }
-
-    let newBalance = expense.totalAmount - amountPaid;
-
-    if (newBalance === 0) {
-      const updatedExpense = await ExpenseMod.findByIdAndUpdate(
-        expenseId,
-        { 
-          amountPaid: expense.amountPaid + amountPaid,
-          balance: newBalance,
-          paymentStatus: "Fully Paid"
-        },
-        { new: true }
-      );
-
-      return res.status(200).json({
-        status: "Success",
-        data: updatedExpense,
-      });
+    if (expense.paymentStatus === "Fully Paid") {
+      return res.status(400).json({ message: "Expense is already fully paid." });
     }
-
+    let newBalance = expense.balance - amountPaid;
     if (newBalance < 0) {
       return res.status(400).json({ message: "Amount is bigger than balance." });
     }
-
     const paymentStatus = newBalance === 0 ? "Fully Paid" : "Partially Paid";
-
     const updatedExpense = await ExpenseMod.findByIdAndUpdate(
       expenseId,
       {
@@ -141,9 +124,11 @@ export const updateExpense = async (req, res) => {
       },
       { new: true }
     );
-
+    if (amountPaid === 0) {
+      return res.status(400).json({ message: "Please enter an accurate figure for amount paid." });
+    }
     return res.status(200).json({
-      status: "Success", 
+      status: "Success",
       data: updatedExpense,
     });
   } catch (error) {

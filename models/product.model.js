@@ -34,12 +34,6 @@ const productSchema = new mongoose.Schema({
     lastSupplied: {
          type: Date,
     },
-    barcode:{ 
-        type: String,
-    },
-    weight: {
-        type: Number,
-    },
     supplier: {
         type: String,
     },

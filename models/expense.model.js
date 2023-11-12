@@ -14,7 +14,7 @@ const expenseSchema = new mongoose.Schema({
     type: String,
   },
   category: {
-    type: String,
+    type: String, 
   },
   paymentStatus: {
     type: String,

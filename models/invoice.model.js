@@ -20,11 +20,9 @@ const invoiceSchema = new mongoose.Schema({
   },
   issuedDate: {
     type: Date,
-    get: (date) => date.toISOString().split("T")[0],
   },
   dueDate:{
     type: Date,
-    get: (date) => date.toISOString().split("T")[0],
   },
   customer: {
     type: String,
@@ -44,13 +42,16 @@ const invoiceSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
-  isProductOnLoan: {
-    type: Boolean,
-    default: false
+  invoiceType: {
+    type: String,
+    enum: ["Credit", "Normal"],
   },
   returnDate: {
     type: Date,
-    get: (date) => (date ? date.toISOString().split("T")[0] : null),
+    get: function () {
+      const date = this.getDataValue('returnDate');
+      return date ? date.toLocaleDateString('en-US') : null;
+    },
   },
 });
 

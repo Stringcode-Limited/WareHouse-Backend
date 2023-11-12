@@ -3,21 +3,17 @@ import mongoose from "mongoose";
 const supplierSchema = new mongoose.Schema({
     name: {
         type: String,
-        required: true
     },
     contactInformation: {
         address: {
             type: String,
-            required: true,
         },
         email: {
             type: String,
-            required: true,
             unique: true,
         },
         phone: {
             type: String,
-            required: true,
         },
     },
     suppliedProducts: [
@@ -25,33 +21,31 @@ const supplierSchema = new mongoose.Schema({
             productName: {
                 type: String,
             },
-            expectedQuantity: {
-                type: Number,
-                required: true,
-                default: 0,
-            },
-            expectedDate: {
-              type: Date,
-            },
             dateDelivered: {
               type: Date,
             },
             quantityDelivered: {
                 type: Number,
             },
-            fee: {
+            unitPrice: {
+                type: Number,
+            },
+            totalFee: {
               type: Number,
             },
             status: {
                 type: String,
-                enum: ["Pending", "Delivered", "Canceled"],
-                default: "Pending",
+                default: "Supplied",
             },
-            isSupplyOnLoan:{
-                type: Boolean,
+            balance: {
+                type: Number,
             },
-            returnDate: {
-                type: Date,
+            amountPaid: {
+                type: Number,
+            },
+            suppliedPay: {
+                type: String,
+                enum: ["On-Loan","Fully Paid"]
             }
         },
     ],

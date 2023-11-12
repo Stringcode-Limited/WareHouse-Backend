@@ -132,7 +132,6 @@ export const createProduct = async (req, res) => {
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
-
     const {
       name,
       description,
@@ -141,9 +140,8 @@ export const createProduct = async (req, res) => {
       category,
       availability,
       expirationDate,
-      barcode,
-      weight,
       supplier,
+      lastSupplied,
     } = req.body;
     const productExists = await ProductModel.findOne({ name });
     if (productExists) {
@@ -164,7 +162,7 @@ export const createProduct = async (req, res) => {
           category,
           availability: 'Available',
           expirationDate,
-          lastSupplied: new Date().toISOString(),
+          lastSupplied,
           barcode,
           weight,
           supplier
@@ -456,6 +454,71 @@ export const deleteProduct = async (req, res) => {
     } else {
       return res.status(400).json({ message: "Product cannot be deleted" });
     }
+  } catch (error) {
+    console.error("Error:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+
+export const checkExpiringProducts = async (req, res) => {
+  const userId = req.userAuth;
+  if (!userId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  try {
+    const today = new Date();
+    const oneMonthLater = new Date(today.getFullYear(), today.getMonth() + 1, today.getDate());
+    const twentyDaysLater = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 20);
+    const tenDaysLater = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 10);
+
+    let expiringProducts = [];
+
+    const employee = await EmployeeMod.findById(userId).populate("superAdminId");
+    if (employee) {
+      const superAdmin = await AdminModel.findById(employee.superAdminId).populate("products");
+      if (superAdmin) {
+        expiringProducts = superAdmin.products.filter(product => {
+          const expirationDate = new Date(product.expirationDate);
+          const daysRemaining = Math.floor((expirationDate - today) / (1000 * 60 * 60 * 24));
+
+          return (
+            (expirationDate <= oneMonthLater && expirationDate > twentyDaysLater) ||
+            (expirationDate <= twentyDaysLater && expirationDate > tenDaysLater) ||
+            (product.quantity <= 10 && product.quantity > 0)
+          );
+        });
+      }
+    } else {
+      const superAdmin = await AdminModel.findById(userId).populate("products");
+      if (superAdmin) {
+        expiringProducts = superAdmin.products.filter(product => {
+          const expirationDate = new Date(product.expirationDate);
+          const daysRemaining = Math.floor((expirationDate - today) / (1000 * 60 * 60 * 24));
+          return (
+            (expirationDate <= oneMonthLater && expirationDate > twentyDaysLater) ||
+            (expirationDate <= twentyDaysLater && expirationDate > tenDaysLater) ||
+            (product.quantity <= 10 && product.quantity > 0)
+          );
+        });
+      }
+    }
+    const messages = expiringProducts.map(product => {
+      const expirationDate = new Date(product.expirationDate);
+      const daysRemaining = Math.floor((expirationDate - today) / (1000 * 60 * 60 * 24));
+      const quantityRemaining = product.quantity;
+      let message = "";
+      if (expirationDate <= oneMonthLater && expirationDate > twentyDaysLater) {
+        message = `${product.name} has ${daysRemaining} days left before expiration `;
+      } else if (expirationDate <= twentyDaysLater && expirationDate > tenDaysLater) {
+        message = `${product.name} has ${daysRemaining} days left before expiration`;
+      } else if (product.quantity <= 10 && product.quantity > 0) {
+        message = `${product.name} has only ${quantityRemaining} units remaining.`;
+      }
+      return message;
+    });
+
+    return res.status(200).json({ message: messages });
   } catch (error) {
     console.error("Error:", error);
     return res.status(500).json({ message: "Internal Server Error" });

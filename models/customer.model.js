@@ -26,34 +26,6 @@ const customerSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Receipt"
   }],
-  creditCase: [{
-    product: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Product",
-    },
-    productName: {
-      type: String,
-    },
-    quantity: {
-      type: Number,
-    },
-    total: {
-      type: Number,
-    }, 
-    dueDate: {
-      type: Date,
-    },
-    issuedDate: {
-      type: Date,
-    },
-    status: {
-      type: String,
-      enum: ['Outstanding','Overdue', 'Settled']
-    },
-    settleDate: {
-      type: Date,
-    },
-  }],
 });
 
 const CustomerModel = mongoose.model("Customer", customerSchema);

@@ -62,9 +62,9 @@ export const adminLogin = async (req, res) => {
 };
 
 export const logIn = async (req, res) => {
-  const { email, password, role } = req.body;
+  const { email, password } = req.body;
   try {
-    const existingUser = await EmployeeMod.findOne({ email, role });
+    const existingUser = await EmployeeMod.findOne({ email });
     if (!existingUser) {
       return res.json({
         status: "Error",
@@ -72,12 +72,12 @@ export const logIn = async (req, res) => {
       });
     }
     const isPasswordValid = await bcrypt.compare(
-      password,
+      password, 
       existingUser.password
     );
-    if (!isPasswordValid) {
+    if (!isPasswordValid) { 
       return res.json({
-        status: "error",
+        status: "Error",
         message: "Invalid Credentials",
       });
     }
@@ -92,7 +92,7 @@ export const logIn = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.json({
-      status: "error",
+      status: "Error",
       message: "Failed to login",
     });
   }
