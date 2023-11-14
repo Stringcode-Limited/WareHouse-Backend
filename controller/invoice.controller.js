@@ -16,8 +16,8 @@ export const createInvoice = async (req, res) => {
     const {
       products,
       customer,
-      discountName,
-      taxName,
+      // discountName,
+      // taxName,
       issuedDate,
       invoiceType,
       dueDate
@@ -31,15 +31,6 @@ export const createInvoice = async (req, res) => {
         return res.status(400).json({ error: 'Product not available in sufficient quantity.' });
       }
       total += existingProduct.price * quantity;
-    }
-    const tax = await TaxModel.findOne({ name: taxName });
-    const discount = await DiscountMod.findOne({ name: discountName });
-    let calculatedTotal = total;
-    if (tax) {
-      calculatedTotal += total * (tax.rate / 100);
-    }
-    if (discount) {
-      calculatedTotal -= total * (discount.value / 100);
     }
     let issuedBy = "SuperAdmin";
     if (userId) {
@@ -55,8 +46,6 @@ export const createInvoice = async (req, res) => {
       dueDate,
       customer,
       invoiceType,
-      discount: discount ? discount.value : 0,
-      tax: tax ? tax.rate : 0,
       issuedBy,
       total: calculatedTotal,
     });
@@ -69,6 +58,7 @@ export const createInvoice = async (req, res) => {
     return res.status(500).json({ message: 'Internal Server Error' });
   }
 };
+
 
 
 export const getAllInvoices = async (req, res) => {
@@ -175,6 +165,7 @@ export const unpaidInvoice = async (req, res) => {
   }
 };
 
+
 export const paidInvoice = async (req, res) => {
   const user = req.userAuth;
   if (!user) {
@@ -204,16 +195,12 @@ export const paidInvoice = async (req, res) => {
   }
 };
 
-
-
 export const generateSalesReport = async (req, res) => {
   try {
     const userId = req.userAuth;
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
-
-    // Get all invoices with status 'Paid' and due date today
     const today = new Date().toISOString().split("T")[0];
     const invoices = await InvoiceModel.find({
       status: 'Paid',
@@ -221,28 +208,19 @@ export const generateSalesReport = async (req, res) => {
     }).populate('products.productName');
 
     const salesReport = [];
-
-    // Create a map to accumulate quantity and totalAmount for each product
     const productMap = new Map();
-
-    // Iterate through each invoice
     for (const invoice of invoices) {
-      // Iterate through each product in the invoice
       for (const product of invoice.products) {
         const productId = product.productName._id;
         const productName = product.productName.name;
         const quantity = product.quantity;
         const price = product.productName.price;
         const totalAmount = quantity * price;
-
-        // Check if the product is already in the map
         if (productMap.has(productId)) {
-          // If yes, update quantity and totalAmount
           const existingProduct = productMap.get(productId);
           existingProduct.quantity += quantity;
           existingProduct.totalAmount += totalAmount;
         } else {
-          // If not, add the product to the map
           productMap.set(productId, {
             productName,
             quantity,
@@ -252,13 +230,11 @@ export const generateSalesReport = async (req, res) => {
         }
       }
     }
-
-    // Convert the map values to an array
     salesReport.push(...productMap.values());
-
     res.status(200).json(salesReport);
   } catch (error) {
     console.error('Error generating sales report:', error);
     res.status(500).json({ error: 'Unable to generate sales report' });
   }
 };
+

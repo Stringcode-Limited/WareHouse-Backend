@@ -189,7 +189,7 @@ export const settledSupplier = async (req, res) => {
       return res.status(404).json({ message: "Supplied product not found" });
     }
     if (suppliedProduct.balance === 0){
-      return res.status(404).json({ message: "Supplier has already been paid off" })
+      return res.status(404).json({ message: "Supplier has already been paid off" });
     }
     let newBalance = suppliedProduct.balance - amountPaid;
     if (newBalance <= 0) {
