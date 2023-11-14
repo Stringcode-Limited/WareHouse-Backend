@@ -145,7 +145,7 @@ export const createProduct = async (req, res) => {
     } = req.body;
     const productExists = await ProductModel.findOne({ name });
     if (productExists) {
-      productExists.quantity += quantity;
+      productExists.quantity = Number(productExists.quantity) + Number(quantity);
       productExists.lastSupplied = new Date().toISOString();
       await productExists.save();
       return res.status(200).json({ message: "Product updated successfully." });
@@ -163,8 +163,6 @@ export const createProduct = async (req, res) => {
           availability: 'Available',
           expirationDate,
           lastSupplied,
-          barcode,
-          weight,
           supplier
         });
         await newProduct.save();
@@ -184,8 +182,6 @@ export const createProduct = async (req, res) => {
           availability: 'Available',
           expirationDate,
           lastSupplied: new Date().toISOString(),
-          barcode,
-          weight,
           supplier
         }); 
         await newProduct.save(); 

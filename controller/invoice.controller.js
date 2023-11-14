@@ -16,8 +16,6 @@ export const createInvoice = async (req, res) => {
     const {
       products,
       customer,
-      // discountName,
-      // taxName,
       issuedDate,
       invoiceType,
       dueDate
