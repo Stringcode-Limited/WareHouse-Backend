@@ -159,7 +159,7 @@ export const unpaidInvoice = async (req, res) => {
       return res.status(404).json({ message: "Invoice not found." });
     }
     if (invoice.status === "Unpaid") {
-      return res.status(200).json({ message: "Invoice is already unpaid." });
+      return res.status(201).json({ message: "Invoice is already unpaid." });
     }
     const unpaidInvoice = await InvoiceModel.findByIdAndUpdate(
       invoiceId,
@@ -187,7 +187,7 @@ export const paidInvoice = async (req, res) => {
       return res.status(404).json({ message: "Invoice not found." });
     }
     if (invoice.status === "Paid") {
-      return res.status(400).json({ message: "Invoice is already settled." });
+      return res.status(201).json({ message: "Invoice is already settled." });
     }
     await createSalesReport(invoiceId,user,res);
     const unpaidInvoice = await InvoiceModel.findByIdAndUpdate(
