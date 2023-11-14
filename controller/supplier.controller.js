@@ -124,9 +124,6 @@ export const addProductForSupplier = async (req, res) => {
 };
 
 
-
-
-
 export const getSuppliersStat = async (req, res) => {
   const user = req.userAuth;
   if (!user) {
@@ -173,3 +170,35 @@ export const updateSupplierBasicInfo = async (req, res) => {
   }
 };
 
+export const settledSupplier = async (req, res) => {
+  const userId = req.userAuth;
+  if (!userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  try {
+    const { supplierId, productId } = req.params;
+    const { amountPaid } = req.body;
+    const supplier = await SupplierModel.findById(supplierId);
+    if (!supplier) {
+      return res.status(404).json({ message: "Supplier not found" });
+    }
+    const suppliedProduct = supplier.suppliedProducts.find(
+      (product) => product._id == productId
+    );
+    if (!suppliedProduct) {
+      return res.status(404).json({ message: "Supplied product not found" });
+    }
+    let newBalance = suppliedProduct.balance - amountPaid;
+    if (newBalance < 0) {
+      return res.status(400).json({ message: "Amount is bigger than balance." });
+    }
+    suppliedProduct.balance = newBalance;
+    suppliedProduct.amountPaid = Number(suppliedProduct.amountPaid) + Number(amountPaid);;
+    suppliedProduct.paymentStatus = newBalance === 0 ? "Fully Paid" : "Partially Paid";
+    await supplier.save();
+    return res.status(200).json({ message: "Supplier settlement updated successfully" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Unable to settle supplier" });
+  }
+};

@@ -26,7 +26,7 @@ export const createSalesReport = async (invoiceId, userId, res) => {
 
           const existingReport = await Sales.findOne({
             product: productName,
-            date: dueDate,
+            date: new Date(Date.now()),
           });
 
           if (existingReport) {
@@ -36,7 +36,7 @@ export const createSalesReport = async (invoiceId, userId, res) => {
             salesReports.push(existingReport);
           } else {
             const newReport = new Sales({
-              date: dueDate,
+              date: new Date(Date.now()),
               product: productName,
               quantity,
               unitPrice: price,

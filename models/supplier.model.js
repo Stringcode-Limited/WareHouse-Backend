@@ -46,6 +46,9 @@ const supplierSchema = new mongoose.Schema({
             suppliedPay: {
                 type: String,
                 enum: ["On-Loan","Fully Paid"]
+            },
+            datePayed: {
+                type: Date
             }
         },
     ],

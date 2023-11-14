@@ -6,6 +6,7 @@ import {
   allSuppliers,
   getSupplierById,
   getSuppliersStat,
+  settledSupplier,
   updateSupplierBasicInfo,
 } from "./../controller/supplier.controller.js";
 
@@ -22,5 +23,7 @@ supplyRoute.put("/update-supplier-info/:supplierId", loggedIn, updateSupplierBas
 supplyRoute.get("/getSupplier/:supplierId", loggedIn, getSupplierById);
 
 supplyRoute.get("/suppliers-products/:supplierId", loggedIn, getSuppliersStat);
+
+supplyRoute.put("/settle-supply/:supplierId/:productId", loggedIn, settledSupplier);
 
 export default supplyRoute;
