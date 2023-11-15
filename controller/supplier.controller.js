@@ -192,7 +192,7 @@ export const settledSupplier = async (req, res) => {
       return res.status(404).json({ message: "Supplier has already been paid off" });
     }
     let newBalance = suppliedProduct.balance - amountPaid;
-    if (newBalance <= 0) {
+    if (newBalance < 0) {
       return res.status(400).json({ message: "Amount is bigger than balance." });
     }
     suppliedProduct.balance = newBalance;
