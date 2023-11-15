@@ -28,7 +28,7 @@ export const createInvoice = async (req, res) => {
       if (!existingProduct || existingProduct.quantity < quantity) {
         return res.status(400).json({ error: 'Product not available in sufficient quantity.' });
       }
-      total += existingProduct.price * quantity;
+      total += Number(existingProduct.price) * Number(quantity);
     }
     let issuedBy = "SuperAdmin";
     if (userId) {
@@ -45,7 +45,7 @@ export const createInvoice = async (req, res) => {
       customer,
       invoiceType,
       issuedBy,
-      total: calculatedTotal,
+      total
     });
     await newInvoice.save();
     existingCustomer.invoice.push(newInvoice._id);
