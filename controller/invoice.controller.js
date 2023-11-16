@@ -186,7 +186,6 @@ export const paidInvoice = async (req, res) => {
       return res.status(404).json({ message: "Invoice not found." });
     }
     if (invoice.status === "Paid" || invoice.balance === 0) {
-      console.log("Invoice is already settled.");
       return res.status(400).json({ message: "Invoice is already paid off." });
     }
     const { amountPaid, paymentMethod } = req.body;
