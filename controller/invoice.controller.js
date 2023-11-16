@@ -37,7 +37,7 @@ export const createInvoice = async (req, res) => {
       return res.status(400).json({ error: 'Amount paid must be a positive number.' });
     }
     if (amountPaid > total) {
-      return res.status(400).json({ error: 'Amount paid greater than total.' });
+      return res.status(400).json({ error: 'Initial payment greater than total.' });
     }
     const balance = total - amountPaid;
     let status = 'Pending';
@@ -185,27 +185,40 @@ export const paidInvoice = async (req, res) => {
       console.error("Error: Invoice not found.");
       return res.status(404).json({ message: "Invoice not found." });
     }
-    console.log("Invoice found:", invoice);
-    if (invoice.status === "Paid") {
+    if (invoice.status === "Paid" || invoice.balance === 0) {
       console.log("Invoice is already settled.");
-      return res.status(201).json({ message: "Invoice is already settled." });
+      return res.status(400).json({ message: "Invoice is already paid off." });
     }
-    await createSalesReport(invoiceId, user, res);
-    const unpaidInvoice = await InvoiceModel.findByIdAndUpdate(
+    const { amountPaid, paymentMethod } = req.body;
+    if (amountPaid <= 0) {
+      return res.status(400).json({ error: 'Amount paid must be a positive number.' });
+    }
+    if (amountPaid > invoice.balance) {
+      return res.status(400).json({ error: 'Amount paid is greater than the balance.' });
+    }
+    const newBalance = invoice.balance - amountPaid;
+    const newAmountPaid = Number(invoice.amountPaid) + Number(amountPaid);
+    const newStatus = newBalance === 0 ? "Paid" : "Partially Paid";
+    const settledInvoice = await InvoiceModel.findByIdAndUpdate(
       invoiceId,
-      { status: "Paid" },
+      {
+        status: newStatus,
+        amountPaid: newAmountPaid,
+        balance: newBalance,
+        paymentMethod: paymentMethod,
+      },
       { new: true }
     );
-    console.log("Invoice Settled successfully:", unpaidInvoice);
     res.status(200).json({
-      data: unpaidInvoice,
-      message: "Invoice Settled.",
+      data: settledInvoice,
+      message: "Invoice settled successfully.",
     });
   } catch (error) {
-    console.error("Error in paidInvoice:", error);
-    res.status(500).json({ error: "Unable to cancel Invoice" });
+    console.error("Error in settleInvoice:", error);
+    res.status(500).json({ error: "Unable to settle the invoice." });
   }
 };
+
 
 
 // export const generateSalesReport = async (req, res) => {
