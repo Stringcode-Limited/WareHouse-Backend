@@ -17,8 +17,9 @@ export const createInvoice = async (req, res) => {
       products,
       customer,
       issuedDate,
-      invoiceType,
-      dueDate
+      dueDate,
+      paymentMethod,
+      amountPaid,
     } = req.body;
     const existingCustomer = await CustomerModel.findOne({ name: customer });
     let total = 0;
@@ -26,26 +27,33 @@ export const createInvoice = async (req, res) => {
       const { productName, quantity } = product;
       const existingProduct = await ProductModel.findOne({ name: productName });
       if (!existingProduct || existingProduct.quantity < quantity) {
-        return res.status(400).json({ error: 'Product not available in sufficient quantity.' });
+        return res
+          .status(400)
+          .json({ error: 'Product not available in sufficient quantity.' });
       }
       total += Number(existingProduct.price) * Number(quantity);
     }
-    let issuedBy = "SuperAdmin";
-    if (userId) {
-      const issuingEmployee = await EmployeeMod.findById(userId);
-      if (issuingEmployee) {
-        issuedBy = issuingEmployee.name;
-      }
+    if (amountPaid < 0) {
+      return res.status(400).json({ error: 'Amount paid must be a positive number.' });
+    }
+    if (amountPaid > total) {
+      return res.status(400).json({ error: 'Amount paid greater than total.' });
+    }
+    const balance = total - amountPaid;
+    let status = 'Pending';
+    if (balance < total) {
+      status = 'Partially Paid';
     }
     const newInvoice = new InvoiceModel({
       products,
-      status: "Pending",
+      status,
       issuedDate,
       dueDate,
       customer,
-      invoiceType,
-      issuedBy,
-      total
+      total,
+      paymentMethod,
+      amountPaid,
+      balance,
     });
     await newInvoice.save();
     existingCustomer.invoice.push(newInvoice._id);
@@ -56,6 +64,7 @@ export const createInvoice = async (req, res) => {
     return res.status(500).json({ message: 'Internal Server Error' });
   }
 };
+
 
 
 
@@ -173,66 +182,72 @@ export const paidInvoice = async (req, res) => {
     const invoiceId = req.params.invoiceId;
     const invoice = await InvoiceModel.findById(invoiceId);
     if (!invoice) {
+      console.error("Error: Invoice not found.");
       return res.status(404).json({ message: "Invoice not found." });
     }
+    console.log("Invoice found:", invoice);
     if (invoice.status === "Paid") {
+      console.log("Invoice is already settled.");
       return res.status(201).json({ message: "Invoice is already settled." });
     }
-    await createSalesReport(invoiceId,user,res);
+    await createSalesReport(invoiceId, user, res);
     const unpaidInvoice = await InvoiceModel.findByIdAndUpdate(
       invoiceId,
       { status: "Paid" },
       { new: true }
-      );
+    );
+    console.log("Invoice Settled successfully:", unpaidInvoice);
     res.status(200).json({
       data: unpaidInvoice,
       message: "Invoice Settled.",
     });
   } catch (error) {
+    console.error("Error in paidInvoice:", error);
     res.status(500).json({ error: "Unable to cancel Invoice" });
   }
 };
 
-export const generateSalesReport = async (req, res) => {
-  try {
-    const userId = req.userAuth;
-    if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const today = new Date().toISOString().split("T")[0];
-    const invoices = await InvoiceModel.find({
-      status: 'Paid',
-      dueDate: today,
-    }).populate('products.productName');
 
-    const salesReport = [];
-    const productMap = new Map();
-    for (const invoice of invoices) {
-      for (const product of invoice.products) {
-        const productId = product.productName._id;
-        const productName = product.productName.name;
-        const quantity = product.quantity;
-        const price = product.productName.price;
-        const totalAmount = quantity * price;
-        if (productMap.has(productId)) {
-          const existingProduct = productMap.get(productId);
-          existingProduct.quantity += quantity;
-          existingProduct.totalAmount += totalAmount;
-        } else {
-          productMap.set(productId, {
-            productName,
-            quantity,
-            price,
-            totalAmount,
-          });
-        }
-      }
-    }
-    salesReport.push(...productMap.values());
-    res.status(200).json(salesReport);
-  } catch (error) {
-    console.error('Error generating sales report:', error);
-    res.status(500).json({ error: 'Unable to generate sales report' });
-  }
-};
+// export const generateSalesReport = async (req, res) => {
+//   try {
+//     const userId = req.userAuth;
+//     if (!userId) {
+//       return res.status(401).json({ error: 'Unauthorized' });
+//     }
+//     const today = new Date().toISOString().split("T")[0];
+//     const invoices = await InvoiceModel.find({
+//       status: 'Paid',
+//       dueDate: today,
+//     }).populate('products.productName');
+
+//     const salesReport = [];
+//     const productMap = new Map();
+//     for (const invoice of invoices) {
+//       for (const product of invoice.products) {
+//         const productId = product.productName._id;
+//         const productName = product.productName.name;
+//         const quantity = product.quantity;
+//         const price = product.productName.price;
+//         const totalAmount = quantity * price;
+//         if (productMap.has(productId)) {
+//           const existingProduct = productMap.get(productId);
+//           existingProduct.quantity += quantity;
+//           existingProduct.totalAmount += totalAmount;
+//         } else {
+//           productMap.set(productId, {
+//             productName,
+//             quantity,
+//             price,
+//             totalAmount,
+//           });
+//         }
+//       }
+//     }
+//     salesReport.push(...productMap.values());
+//     res.status(200).json(salesReport);
+//   } catch (error) {
+//     console.error('Error generating sales report:', error);
+//     res.status(500).json({ error: 'Unable to generate sales report' });
+//   }
+// };
 

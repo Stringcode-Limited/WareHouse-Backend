@@ -15,7 +15,7 @@ const invoiceSchema = new mongoose.Schema({
   ],
   status: {
     type: String,
-    enum: ["Pending","Paid","Unpaid"],
+    enum: ["Pending","Paid","Unpaid","Partially Paid"],
     default: "Pending",
   },
   issuedDate: {
@@ -27,32 +27,19 @@ const invoiceSchema = new mongoose.Schema({
   customer: {
     type: String,
   },
-  discount: {
-    type: Number,
-    default: 0,
-  },
-  tax: {
-    type: Number,
-    default: 0
-  },
-  issuedBy: {
-    type: String,
-  },
   total: {
     type: Number,
     required: true,
   },
-  invoiceType: {
+  paymentMethod: {
     type: String,
-    enum: ["Credit", "Normal"],
   },
-  returnDate: {
-    type: Date,
-    get: function () {
-      const date = this.getDataValue('returnDate');
-      return date ? date.toLocaleDateString('en-US') : null;
-    },
+  amountPaid: {
+    type: Number,
   },
+  balance: {
+    type: Number,
+  }
 });
 
 const InvoiceModel = mongoose.model("Invoice", invoiceSchema);

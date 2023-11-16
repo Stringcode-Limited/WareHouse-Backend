@@ -8,8 +8,12 @@ export const createSalesReport = async (invoiceId, userId, res) => {
   try {
     const invoice = await InvoiceModel.findById(invoiceId);
     if (!invoice) {
+      console.error("Error: Invoice not found.");
       throw new Error("Invoice not found.");
     }
+
+    console.log("Invoice found:", invoice);
+
     const { products, total, dueDate } = invoice;
     const salesReports = [];
     const employee = await EmployeeMod.findById(userId).populate("superAdminId");
@@ -20,20 +24,20 @@ export const createSalesReport = async (invoiceId, userId, res) => {
           const { productName, quantity } = product;
           const productDetails = await ProductModel.findOne({ name: productName });
           if (!productDetails) {
+            console.error(`Error: Product details not found for ${productName}.`);
             throw new Error(`Product details not found for ${productName}.`);
           }
           const { price } = productDetails;
-
           const existingReport = await Sales.findOne({
             product: productName,
             date: new Date(Date.now()),
           });
-
           if (existingReport) {
             existingReport.quantity += quantity;
             existingReport.total += total;
             await existingReport.save();
             salesReports.push(existingReport);
+            console.log("Updated existing sales report:", existingReport);
           } else {
             const newReport = new Sales({
               date: new Date(Date.now()),
@@ -45,17 +49,20 @@ export const createSalesReport = async (invoiceId, userId, res) => {
             });
             await newReport.save();
             salesReports.push(newReport);
+            console.log("Created new sales report:", newReport);
           }
         }
         superAdmin.sales.push(...salesReports.map(report => report._id));
         await superAdmin.save();
+        console.log("SuperAdmin sales updated:", superAdmin.sales);
       }
     }
+    console.log("Sales reports created or updated successfully:", salesReports);
   } catch (error) {
-    console.error(error);
+    console.error("Error in createSalesReport:", error);
   }
 };
-  
+
 
   export const getAllSalesReports = async (req, res) => {
     try {
