@@ -18,7 +18,9 @@ import {
   deleteStaff,
   getUserById,
   marketerSale,
-  getEmployeeMarketSale
+  getEmployeeMarketSale,
+  employeeMarketSaleById,
+  updateMarketSale
 } from "../controller/personnel.controller.js";
 
 const personnelRouter = express.Router();
@@ -43,15 +45,15 @@ personnelRouter.delete("/delete-staff/:employeeId", loggedIn, deleteStaff);
 
 personnelRouter.get("/get-customer/:customerId", loggedIn, getCustomerById);
 
-personnelRouter.get(
-  "/customer-invoice/:customerId",
-  loggedIn,
-  getCustomerInvoice
-);
+personnelRouter.get("/customer-invoice/:customerId", loggedIn, getCustomerInvoice);
 
 personnelRouter.post("/marketer-sales", loggedIn, marketerSale);
 
 personnelRouter.get("/marketer-sales/:employeeId", loggedIn, getEmployeeMarketSale);
+
+personnelRouter.get("/employees-market-sale/:employeeId/:marketSaleId", loggedIn, employeeMarketSaleById);
+
+personnelRouter.put("/update-market-sale/:employeeId/:marketSaleId", loggedIn, updateMarketSale);
 
 personnelRouter.put("/update-password", loggedIn, updatePassword);
 

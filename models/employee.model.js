@@ -48,9 +48,16 @@
                     type: Number,
                     default: 0
                 },
+                quantitySold: {
+                    type: Number,
+                    default: 0
+                },
                 amountOwed: {
                     type: Number,
                     default: 0,
+                },
+                expectedProfit:{
+                    type: Number,
                 },
                 sellPercentage: {
                     type: Number,

@@ -390,7 +390,8 @@ export const marketerSale = async (req, res) => {
     employee.outMarket.push({
       productName,
       quantity,
-      unitPrice: existingProduct.price
+      unitPrice: existingProduct.price,
+      expectedProfit: Number(quantity) * Number(existingProduct.price)
     });
     await employee.save();
     return res.status(200).json({ message: 'Product added to outMarket successfully.' });
@@ -412,6 +413,54 @@ export const getEmployeeMarketSale = async (req, res) => {
       return res.status(400).json({ error: `Employee with ID '${targetEmployeeId}' not found.` });
     }
     return res.status(200).json({ marketSale: targetEmployee.outMarket });
+  } catch (error) {
+    console.error('Error:', error);
+    return res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+export const employeeMarketSaleById = async (req, res) => {
+  const targetEmployeeId = req.params.employeeId;
+  const marketSaleId = req.params.marketSaleId;
+  try {
+    const targetEmployee = await EmployeeMod.findById(targetEmployeeId);
+    if (!targetEmployee) {
+      return res.status(400).json({ error: `Employee with ID '${targetEmployeeId}' not found.` });
+    }
+    const marketSale = targetEmployee.outMarket.id(marketSaleId);
+    if (!marketSale) {
+      return res.status(400).json({ error: `Market sale with ID '${marketSaleId}' not found for the employee.` });
+    }
+    return res.status(200).json({ marketSale });
+  } catch (error) {
+    console.error('Error:', error);
+    return res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+export const updateMarketSale = async (req, res) => {
+  const employeeId = req.params.employeeId;
+  const marketSaleId = req.params.marketSaleId;
+  try {
+    const user = await EmployeeMod.findById(employeeId).populate("outMarket");
+    if (!user) {
+      return res.status(400).json({ error: `Employee with ID '${employeeId}' not found.` });
+    }
+    const marketSale = user.outMarket.id(marketSaleId);
+    if (!marketSale) {
+      return res.status(400).json({ error: `Market sale with ID '${marketSaleId}' not found for the employee.` });
+    }
+    const { quantitySold } = req.body;
+    marketSale.quantitySold = quantitySold;
+    marketSale.amountMade = Number(quantitySold) * Number(marketSale.unitPrice);
+    marketSale.amountOwed = Number(marketSale.expectedProfit) - Number(marketSale.amountMade);
+    if (marketSale.quantity > 0) {
+      marketSale.sellPercentage = (Number(marketSale.quantitySold) / Number(marketSale.quantity)) * 100;
+    } else {
+      marketSale.sellPercentage = 0;
+    }
+    await user.save();
+    return res.status(200).json({ message: 'Market sale updated successfully.' });
   } catch (error) {
     console.error('Error:', error);
     return res.status(500).json({ message: 'Internal Server Error' });
