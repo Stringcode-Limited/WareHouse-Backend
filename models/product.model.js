@@ -10,7 +10,6 @@ const productSchema = new mongoose.Schema({
     },
     image: {
         type: String,
-        // required: true,
     },
     price: {
         type: Number,
@@ -37,6 +36,11 @@ const productSchema = new mongoose.Schema({
     supplier: {
         type: String,
     },
+    belongsTo: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'SuperAdmin',
+        required: true, 
+    }
 })
 
 const ProductModel = mongoose.model("Product", productSchema)

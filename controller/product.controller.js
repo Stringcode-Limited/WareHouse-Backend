@@ -4,7 +4,6 @@ import CategoryModel from "../models/category.model.js";
 import EmployeeMod from "../models/employee.model.js";
 import AdminModel from "../models/admin.model.js";
 
-
 export const createCategory = async (req, res) => {
   try {
     const userId = req.userAuth;
@@ -16,7 +15,9 @@ export const createCategory = async (req, res) => {
     if (categoryExists) {
       return res.status(400).json({ error: "Category already exists." });
     }
-    const employee = await EmployeeMod.findById(userId).populate("superAdminId");
+    const employee = await EmployeeMod.findById(userId).populate(
+      "superAdminId"
+    );
     if (employee) {
       const superAdmin = await AdminModel.findById(employee.superAdminId);
       if (superAdmin) {
@@ -24,7 +25,9 @@ export const createCategory = async (req, res) => {
         await newCategory.save();
         superAdmin.category.push(newCategory._id);
         await superAdmin.save();
-        return res.status(201).json({ message: "Category created successfully." });
+        return res
+          .status(201)
+          .json({ message: "Category created successfully." });
       }
     } else {
       const superAdmin = await AdminModel.findById(userId);
@@ -33,7 +36,9 @@ export const createCategory = async (req, res) => {
         await newCategory.save();
         superAdmin.category.push(newCategory._id);
         await superAdmin.save();
-        return res.status(201).json({ message: "Category created successfully." });
+        return res
+          .status(201)
+          .json({ message: "Category created successfully." });
       }
     }
   } catch (error) {
@@ -49,17 +54,23 @@ export const getAllCategories = async (req, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
     let categories = [];
-    const employee = await EmployeeMod.findById(userId).populate("superAdminId");
+    const employee = await EmployeeMod.findById(userId).populate(
+      "superAdminId"
+    );
     if (employee) {
       const superAdmin = await AdminModel.findById(employee.superAdminId);
       if (superAdmin) {
-        categories = await CategoryModel.find({ _id: { $in: superAdmin.category } });
+        categories = await CategoryModel.find({
+          _id: { $in: superAdmin.category },
+        });
       }
     }
     if (categories.length === 0) {
       const superAdmin = await AdminModel.findById(userId);
       if (superAdmin) {
-        categories = await CategoryModel.find({ _id: { $in: superAdmin.category } });
+        categories = await CategoryModel.find({
+          _id: { $in: superAdmin.category },
+        });
       }
     }
     return res.status(200).json({ categories });
@@ -72,31 +83,39 @@ export const getAllCategories = async (req, res) => {
 export const getCategoryId = async (req, res) => {
   const userId = req.userAuth;
   if (!userId) {
-    return res.status(401).json({ error: 'Unauthorized' });
+    return res.status(401).json({ error: "Unauthorized" });
   }
   try {
     const categoryId = req.params.categoryId;
     let category = null;
-    const employee = await EmployeeMod.findById(userId).populate('superAdminId');
+    const employee = await EmployeeMod.findById(userId).populate(
+      "superAdminId"
+    );
     if (employee) {
-      const superAdmin = await AdminModel.findById(employee.superAdminId).populate('category');
+      const superAdmin = await AdminModel.findById(
+        employee.superAdminId
+      ).populate("category");
       if (superAdmin) {
-        category = superAdmin.category.find(cat => cat._id.toString() === categoryId);
+        category = superAdmin.category.find(
+          (cat) => cat._id.toString() === categoryId
+        );
       }
     } else {
-      const superAdmin = await AdminModel.findById(userId).populate('category');
+      const superAdmin = await AdminModel.findById(userId).populate("category");
       if (superAdmin) {
-        category = superAdmin.category.find(cat => cat._id.toString() === categoryId);
+        category = superAdmin.category.find(
+          (cat) => cat._id.toString() === categoryId
+        );
       }
     }
     if (category) {
       return res.status(200).json({ category });
     } else {
-      return res.status(404).json({ message: 'Category not found.' });
+      return res.status(404).json({ message: "Category not found." });
     }
   } catch (error) {
-    console.error('Error:', error);
-    return res.status(500).json({ message: 'Internal Server Error' });
+    console.error("Error:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
@@ -129,9 +148,7 @@ export const editCategory = async (req, res) => {
 export const createProduct = async (req, res) => {
   try {
     const userId = req.userAuth;
-    if (!userId) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const {
       name,
       description,
@@ -143,52 +160,47 @@ export const createProduct = async (req, res) => {
       supplier,
       lastSupplied,
     } = req.body;
-    const productExists = await ProductModel.findOne({ name });
-    if (productExists) {
-      productExists.quantity = Number(productExists.quantity) + Number(quantity);
-      productExists.lastSupplied = new Date().toISOString();
-      await productExists.save();
+    const existingProduct = await ProductModel.findOne({
+      name,
+      belongsTo: userId,
+    });
+    if (existingProduct) {
+      existingProduct.quantity =
+        Number(existingProduct.quantity) + Number(quantity);
+      existingProduct.lastSupplied = new Date().toISOString();
+      await existingProduct.save();
       return res.status(200).json({ message: "Product updated successfully." });
     }
-    const employee = await EmployeeMod.findById(userId).populate("superAdminId");
-    if (employee) {
+    const employee = await EmployeeMod.findById(userId).populate(
+      "superAdminId"
+    );
+    let superAdminId;
+    if (employee && employee.superAdminId) {
       const superAdmin = await AdminModel.findById(employee.superAdminId);
-      if (superAdmin) {
-        const newProduct = new ProductModel({
-          name,
-          description,
-          price,
-          quantity,
-          category,
-          availability: 'Available',
-          expirationDate,
-          lastSupplied,
-          supplier
-        });
-        await newProduct.save();
-        superAdmin.products.push(newProduct._id);
-        await superAdmin.save();
-        return res.status(201).json({ message: "Product created successfully." });
-      }
+      if (superAdmin) superAdminId = superAdmin._id;
     } else {
-      const superAdmin = await AdminModel.findById(userId);
-      if (superAdmin) {
-        const newProduct = new ProductModel({
-          name,
-          description,
-          price,
-          quantity,
-          category,
-          availability: 'Available',
-          expirationDate,
-          lastSupplied: new Date().toISOString(),
-          supplier
-        }); 
-        await newProduct.save(); 
-        superAdmin.products.push(newProduct._id);
-        await superAdmin.save();
-        return res.status(201).json({ message: "Product created successfully." });
-      }
+      superAdminId = userId;
+    }
+    const newProduct = new ProductModel({
+      name,
+      description,
+      price,
+      quantity,
+      category,
+      availability: "Available",
+      expirationDate,
+      lastSupplied,
+      supplier,
+      belongsTo: superAdminId,
+    });
+    await newProduct.save();
+    const superAdmin = await AdminModel.findById(superAdminId);
+    if (superAdmin) {
+      superAdmin.products.push(newProduct._id);
+      await superAdmin.save();
+      return res.status(201).json({ message: "Product created successfully." });
+    } else {
+      return res.status(404).json({ message: "SuperAdmin not found." });
     }
   } catch (error) {
     console.error("Error:", error);
@@ -196,40 +208,54 @@ export const createProduct = async (req, res) => {
   }
 };
 
-
-
 export const getAllProducts = async (req, res) => {
   const userId = req.userAuth;
   if (!userId) {
     return res.status(401).json({ error: "Unauthorized" });
   }
-  try { 
+  try {
     let products = [];
 
-    const employee = await EmployeeMod.findById(userId).populate("superAdminId");
+    const employee = await EmployeeMod.findById(userId).populate(
+      "superAdminId"
+    );
     if (employee) {
-      const superAdmin = await AdminModel.findById(employee.superAdminId).populate("products");
+      const superAdmin = await AdminModel.findById(
+        employee.superAdminId
+      ).populate("products");
       if (superAdmin) {
-        products = superAdmin.products.map(product => {
-          if (product.quantity === 0) {
-            product.availability = 'Out-of-Stock';
-          } else if (product.availability === 'Out-of-Stock') {
-            product.quantity = 0;
-          }
-          return product;
-        }).filter(product => product.availability === 'Available' || product.availability === 'Out-of-Stock');
+        products = superAdmin.products
+          .map((product) => {
+            if (product.quantity === 0) {
+              product.availability = "Out-of-Stock";
+            } else if (product.availability === "Out-of-Stock") {
+              product.quantity = 0;
+            }
+            return product;
+          })
+          .filter(
+            (product) =>
+              product.availability === "Available" ||
+              product.availability === "Out-of-Stock"
+          );
       }
     } else {
       const superAdmin = await AdminModel.findById(userId).populate("products");
       if (superAdmin) {
-        products = superAdmin.products.map(product => {
-          if (product.quantity === 0) {
-            product.availability = 'Out-of-Stock';
-          } else if (product.availability === 'Out-of-Stock') {
-            product.quantity = 0;
-          }
-          return product;
-        }).filter(product => product.availability === 'Available' || product.availability === 'Out-of-Stock');
+        products = superAdmin.products
+          .map((product) => {
+            if (product.quantity === 0) {
+              product.availability = "Out-of-Stock";
+            } else if (product.availability === "Out-of-Stock") {
+              product.quantity = 0;
+            }
+            return product;
+          })
+          .filter(
+            (product) =>
+              product.availability === "Available" ||
+              product.availability === "Out-of-Stock"
+          );
       }
     }
     return res.status(200).json({ products });
@@ -239,23 +265,23 @@ export const getAllProducts = async (req, res) => {
   }
 };
 
-
 export const getProductByName = async (req, res) => {
   try {
     const productName = req.params.productName;
+    const userId = req.userAuth;
     const product = await ProductModel.findOne({ name: productName });
-    if (!product) {
-      return res.status(404).json({ error: "Product not found" });
+    if (!product) return res.status(404).json({ error: "Product not found" });
+    if ((userId && product.belongsTo.toString() === userId) || (userId && (await EmployeeMod.findOne({ _id: userId, "superAdminId": product.belongsTo })))) {
+      return res.json({ status: "Success", data: product });
+    } else {
+      return res.status(403).json({ error: "Unauthorized" });
     }
-    res.json({
-      status: "Success",
-      data: product,
-    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 export const getProductById = async (req, res) => {
   try {
@@ -274,7 +300,6 @@ export const getProductById = async (req, res) => {
   }
 };
 
-
 export const getDeadStockProducts = async (req, res) => {
   const userId = req.userAuth;
   if (!userId) {
@@ -282,16 +307,24 @@ export const getDeadStockProducts = async (req, res) => {
   }
   try {
     let products = [];
-    const employee = await EmployeeMod.findById(userId).populate("superAdminId");
+    const employee = await EmployeeMod.findById(userId).populate(
+      "superAdminId"
+    );
     if (employee) {
-      const superAdmin = await AdminModel.findById(employee.superAdminId).populate("products");
+      const superAdmin = await AdminModel.findById(
+        employee.superAdminId
+      ).populate("products");
       if (superAdmin) {
-        products = superAdmin.products.filter(product => product.availability === 'Dead Stock');
+        products = superAdmin.products.filter(
+          (product) => product.availability === "Dead Stock"
+        );
       }
     } else {
       const superAdmin = await AdminModel.findById(userId).populate("products");
       if (superAdmin) {
-        products = superAdmin.products.filter(product => product.availability === 'Dead Stock');
+        products = superAdmin.products.filter(
+          (product) => product.availability === "Dead Stock"
+        );
       }
     }
     return res.status(200).json({ products });
@@ -301,13 +334,15 @@ export const getDeadStockProducts = async (req, res) => {
   }
 };
 
-
-
 export const getAllFinishedProducts = async (req, res) => {
   try {
     const products = await ProductModel.find();
-    const availableProducts = products.filter((product) => product.quantity > 0);
-    const outOfStockProducts = products.filter((product) => product.quantity === 0);
+    const availableProducts = products.filter(
+      (product) => product.quantity > 0
+    );
+    const outOfStockProducts = products.filter(
+      (product) => product.quantity === 0
+    );
     if (outOfStockProducts.length > 0) {
       await ProductModel.updateMany(
         { _id: { $in: outOfStockProducts.map((product) => product._id) } },
@@ -320,7 +355,9 @@ export const getAllFinishedProducts = async (req, res) => {
         { availability: "Available" }
       );
     }
-    const outOfStockProductsUpdated = await ProductModel.find({ availability: "Out-of-Stock" });
+    const outOfStockProductsUpdated = await ProductModel.find({
+      availability: "Out-of-Stock",
+    });
     if (outOfStockProductsUpdated.length === 0) {
       return res.json({ message: "No products are out of stock" });
     }
@@ -334,7 +371,6 @@ export const getAllFinishedProducts = async (req, res) => {
   }
 };
 
-
 export const getExpiredProducts = async (req, res) => {
   const userId = req.userAuth;
   if (!userId) {
@@ -343,16 +379,24 @@ export const getExpiredProducts = async (req, res) => {
   try {
     let products = [];
 
-    const employee = await EmployeeMod.findById(userId).populate("superAdminId");
+    const employee = await EmployeeMod.findById(userId).populate(
+      "superAdminId"
+    );
     if (employee) {
-      const superAdmin = await AdminModel.findById(employee.superAdminId).populate("products");
+      const superAdmin = await AdminModel.findById(
+        employee.superAdminId
+      ).populate("products");
       if (superAdmin) {
-        products = superAdmin.products.filter(product => product.availability === 'Expired');
+        products = superAdmin.products.filter(
+          (product) => product.availability === "Expired"
+        );
       }
     } else {
       const superAdmin = await AdminModel.findById(userId).populate("products");
       if (superAdmin) {
-        products = superAdmin.products.filter(product => product.availability === 'Expired');
+        products = superAdmin.products.filter(
+          (product) => product.availability === "Expired"
+        );
       }
     }
     return res.status(200).json({ products });
@@ -361,8 +405,6 @@ export const getExpiredProducts = async (req, res) => {
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
-
 
 export const moveToDeadStock = async (req, res) => {
   const userId = req.userAuth;
@@ -384,7 +426,6 @@ export const moveToDeadStock = async (req, res) => {
   }
 };
 
-
 export const moveToExpired = async (req, res) => {
   const userId = req.userAuth;
   if (!userId) {
@@ -404,7 +445,6 @@ export const moveToExpired = async (req, res) => {
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
 
 export const updateProduct = async (req, res) => {
   const userId = req.userAuth;
@@ -432,7 +472,6 @@ export const updateProduct = async (req, res) => {
   }
 };
 
-
 export const deleteProduct = async (req, res) => {
   const productId = req.params.productId;
   const userId = req.userAuth;
@@ -444,7 +483,10 @@ export const deleteProduct = async (req, res) => {
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
-    if (product.availability === 'Expired' || product.availability === 'Dead Stock') {
+    if (
+      product.availability === "Expired" ||
+      product.availability === "Dead Stock"
+    ) {
       await ProductModel.findByIdAndDelete(productId);
       return res.status(200).json({ message: "Product deleted successfully" });
     } else {
@@ -456,7 +498,6 @@ export const deleteProduct = async (req, res) => {
   }
 };
 
-
 export const checkExpiringProducts = async (req, res) => {
   const userId = req.userAuth;
   if (!userId) {
@@ -464,23 +505,43 @@ export const checkExpiringProducts = async (req, res) => {
   }
   try {
     const today = new Date();
-    const oneMonthLater = new Date(today.getFullYear(), today.getMonth() + 1, today.getDate());
-    const twentyDaysLater = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 20);
-    const tenDaysLater = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 10);
+    const oneMonthLater = new Date(
+      today.getFullYear(),
+      today.getMonth() + 1,
+      today.getDate()
+    );
+    const twentyDaysLater = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate() + 20
+    );
+    const tenDaysLater = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate() + 10
+    );
 
     let expiringProducts = [];
 
-    const employee = await EmployeeMod.findById(userId).populate("superAdminId");
+    const employee = await EmployeeMod.findById(userId).populate(
+      "superAdminId"
+    );
     if (employee) {
-      const superAdmin = await AdminModel.findById(employee.superAdminId).populate("products");
+      const superAdmin = await AdminModel.findById(
+        employee.superAdminId
+      ).populate("products");
       if (superAdmin) {
-        expiringProducts = superAdmin.products.filter(product => {
+        expiringProducts = superAdmin.products.filter((product) => {
           const expirationDate = new Date(product.expirationDate);
-          const daysRemaining = Math.floor((expirationDate - today) / (1000 * 60 * 60 * 24));
+          const daysRemaining = Math.floor(
+            (expirationDate - today) / (1000 * 60 * 60 * 24)
+          );
 
           return (
-            (expirationDate <= oneMonthLater && expirationDate > twentyDaysLater) ||
-            (expirationDate <= twentyDaysLater && expirationDate > tenDaysLater) ||
+            (expirationDate <= oneMonthLater &&
+              expirationDate > twentyDaysLater) ||
+            (expirationDate <= twentyDaysLater &&
+              expirationDate > tenDaysLater) ||
             (product.quantity <= 10 && product.quantity > 0)
           );
         });
@@ -488,25 +549,34 @@ export const checkExpiringProducts = async (req, res) => {
     } else {
       const superAdmin = await AdminModel.findById(userId).populate("products");
       if (superAdmin) {
-        expiringProducts = superAdmin.products.filter(product => {
+        expiringProducts = superAdmin.products.filter((product) => {
           const expirationDate = new Date(product.expirationDate);
-          const daysRemaining = Math.floor((expirationDate - today) / (1000 * 60 * 60 * 24));
+          const daysRemaining = Math.floor(
+            (expirationDate - today) / (1000 * 60 * 60 * 24)
+          );
           return (
-            (expirationDate <= oneMonthLater && expirationDate > twentyDaysLater) ||
-            (expirationDate <= twentyDaysLater && expirationDate > tenDaysLater) ||
+            (expirationDate <= oneMonthLater &&
+              expirationDate > twentyDaysLater) ||
+            (expirationDate <= twentyDaysLater &&
+              expirationDate > tenDaysLater) ||
             (product.quantity <= 10 && product.quantity > 0)
           );
         });
       }
     }
-    const messages = expiringProducts.map(product => {
+    const messages = expiringProducts.map((product) => {
       const expirationDate = new Date(product.expirationDate);
-      const daysRemaining = Math.floor((expirationDate - today) / (1000 * 60 * 60 * 24));
+      const daysRemaining = Math.floor(
+        (expirationDate - today) / (1000 * 60 * 60 * 24)
+      );
       const quantityRemaining = product.quantity;
       let message = "";
       if (expirationDate <= oneMonthLater && expirationDate > twentyDaysLater) {
         message = `${product.name} has ${daysRemaining} days left before expiration `;
-      } else if (expirationDate <= twentyDaysLater && expirationDate > tenDaysLater) {
+      } else if (
+        expirationDate <= twentyDaysLater &&
+        expirationDate > tenDaysLater
+      ) {
         message = `${product.name} has ${daysRemaining} days left before expiration`;
       } else if (product.quantity <= 10 && product.quantity > 0) {
         message = `${product.name} has only ${quantityRemaining} units remaining.`;

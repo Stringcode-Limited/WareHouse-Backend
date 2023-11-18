@@ -75,7 +75,37 @@ const adminSchema = new mongoose.Schema({
       type: mongoose.Schema.Types.ObjectId,
       ref: "Sales"
     }
-  ]
+  ], 
+  deletedItems: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Product"
+    }
+  ],
+  deletedStaffs: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Employee",
+    },
+  ],
+  deletedCustomers: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Customer",
+    },
+  ],
+  deletedSuppliers:[
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Supplier",
+    },
+  ],
+  deletedInvoices: [
+   { 
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Invoice" 
+    }
+  ],
 });
 
 const AdminModel = mongoose.model("SuperAdmin", adminSchema);

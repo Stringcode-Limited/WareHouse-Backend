@@ -362,6 +362,72 @@ export const editCustomer = async (req, res) => {
   }
 };
 
+
+export const marketerSale = async (req, res) => {
+  const userId = req.userAuth;
+  if (!userId) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  try {
+    const { employeeName, productName, quantity } = req.body;
+    const user = await EmployeeMod.findById(userId).populate("superAdminId");
+    const superAdminId = user && user.superAdminId ? user.superAdminId : userId;
+    const employee = await EmployeeMod.findOne({ name: employeeName, superAdminId });
+    if (!employee) {
+      return res.status(400).json({ error: `Employee '${employeeName}' not found.` });
+    }
+    const existingProduct = await ProductModel.findOne({
+      name: productName,
+      belongsTo: employee.superAdminId,
+    });
+    if (!existingProduct || existingProduct.quantity < quantity) {
+      return res.status(400).json({
+        error: `Product '${productName}' not available in sufficient quantity.`,
+      });
+    }
+    existingProduct.quantity -= quantity;
+    await existingProduct.save();
+    employee.outMarket.push({
+      productName,
+      quantity,
+      unitPrice: existingProduct.price
+    });
+    await employee.save();
+    return res.status(200).json({ message: 'Product added to outMarket successfully.' });
+  } catch (error) {
+    console.error('Error:', error);
+    return res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+export const getEmployeeMarketSale = async (req, res) => {
+  const userId = req.userAuth;
+  if (!userId) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  const targetEmployeeId = req.params.employeeId;
+  try {
+    const targetEmployee = await EmployeeMod.findById(targetEmployeeId);
+    if (!targetEmployee) {
+      return res.status(400).json({ error: `Employee with ID '${targetEmployeeId}' not found.` });
+    }
+    return res.status(200).json({ marketSale: targetEmployee.outMarket });
+  } catch (error) {
+    console.error('Error:', error);
+    return res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
 export const editStaff = async (req, res) => {
   const userId = req.userAuth;
   if (!userId) {
@@ -437,8 +503,6 @@ export const getUserById = async (req, res) => {
     res.status(500).json({ message: 'Internal Server Error' });
   }
 };
-
-
 
 export const updateUser = async (req, res) => {
   try {

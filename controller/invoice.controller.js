@@ -13,6 +13,13 @@ export const createInvoice = async (req, res) => {
     return res.status(401).json({ error: 'Unauthorized' });
   }
   try {
+    let superAdminId;
+    const employee = await EmployeeMod.findById(userId).populate("superAdminId");
+    if (employee && employee.superAdminId) {
+      superAdminId = employee.superAdminId;
+    } else {
+      superAdminId = userId;
+    }
     const {
       products,
       customer,
@@ -21,16 +28,18 @@ export const createInvoice = async (req, res) => {
       paymentMethod,
       amountPaid,
     } = req.body;
-    const existingCustomer = await CustomerModel.findOne({ name: customer });
     let total = 0;
     for (const product of products) {
       const { productName, quantity } = product;
-      const existingProduct = await ProductModel.findOne({ name: productName });
+      const existingProduct = await ProductModel.findOne({
+        name: productName,
+        belongsTo: superAdminId,
+      });
       if (!existingProduct || existingProduct.quantity < quantity) {
-        return res
-          .status(400)
-          .json({ error: 'Product not available in sufficient quantity.' });
+        return res.status(400).json({ error: `${productName} not available in sufficient quantity.` });
       }
+      existingProduct.quantity -= quantity;
+      await existingProduct.save();
       total += Number(existingProduct.price) * Number(quantity);
     }
     if (amountPaid < 0) {
@@ -44,6 +53,7 @@ export const createInvoice = async (req, res) => {
     if (balance < total) {
       status = 'Partially Paid';
     }
+    let existingCustomer = await CustomerModel.findOne({ name: customer });
     const newInvoice = new InvoiceModel({
       products,
       status,
@@ -64,6 +74,7 @@ export const createInvoice = async (req, res) => {
     return res.status(500).json({ message: 'Internal Server Error' });
   }
 };
+
 
 
 
