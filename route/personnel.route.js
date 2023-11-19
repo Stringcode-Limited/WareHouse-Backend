@@ -20,7 +20,9 @@ import {
   marketerSale,
   getEmployeeMarketSale,
   employeeMarketSaleById,
-  updateMarketSale
+  updateMarketSale,
+  setQuantityReturned,
+  deleteCustomer
 } from "../controller/personnel.controller.js";
 
 const personnelRouter = express.Router();
@@ -47,6 +49,8 @@ personnelRouter.get("/get-customer/:customerId", loggedIn, getCustomerById);
 
 personnelRouter.get("/customer-invoice/:customerId", loggedIn, getCustomerInvoice);
 
+personnelRouter.delete('/delete-customers/:customerId', loggedIn, deleteCustomer);
+
 personnelRouter.post("/marketer-sales", loggedIn, marketerSale);
 
 personnelRouter.get("/marketer-sales/:employeeId", loggedIn, getEmployeeMarketSale);
@@ -54,6 +58,8 @@ personnelRouter.get("/marketer-sales/:employeeId", loggedIn, getEmployeeMarketSa
 personnelRouter.get("/employees-market-sale/:employeeId/:marketSaleId", loggedIn, employeeMarketSaleById);
 
 personnelRouter.put("/update-market-sale/:employeeId/:marketSaleId", loggedIn, updateMarketSale);
+
+personnelRouter.put("/return-item/:employeeId/:marketSaleId", loggedIn, setQuantityReturned);
 
 personnelRouter.put("/update-password", loggedIn, updatePassword);
 

@@ -22,10 +22,6 @@ const customerSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Invoice"
   }],
-  receipt: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Receipt"
-  }],
 });
 
 const CustomerModel = mongoose.model("Customer", customerSchema);

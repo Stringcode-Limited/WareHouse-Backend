@@ -106,6 +106,12 @@ const adminSchema = new mongoose.Schema({
       ref: "Invoice" 
     }
   ],
+  deletedCategory: [
+    { 
+       type: mongoose.Schema.Types.ObjectId,
+       ref: "Category" 
+     }
+   ],
 });
 
 const AdminModel = mongoose.model("SuperAdmin", adminSchema);
