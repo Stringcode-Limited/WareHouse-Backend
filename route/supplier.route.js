@@ -9,6 +9,7 @@ import {
   settledSupplier,
   updateSupplierBasicInfo,
   deleteSupplier,
+  transactionHistory,
 } from "./../controller/supplier.controller.js";
 
 const supplyRoute = express.Router();
@@ -26,6 +27,8 @@ supplyRoute.get("/getSupplier/:supplierId", loggedIn, getSupplierById);
 supplyRoute.get("/suppliers-products/:supplierId", loggedIn, getSuppliersStat);
 
 supplyRoute.put("/settle-supply/:supplierId/:productId", loggedIn, settledSupplier);
+
+supplyRoute.get("/transaction-history/:supplierId/:productId", loggedIn, transactionHistory);
 
 supplyRoute.delete("/delete-supplier/:supplierId", loggedIn, deleteSupplier);
 

@@ -145,6 +145,42 @@ export const editCategory = async (req, res) => {
   }
 };
 
+export const deleteCategory = async (req, res) => {
+  const userId = req.userAuth;
+  if (!userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  try {
+    const employee = await EmployeeMod.findById(userId).populate('superAdminId');
+    let superAdminId;
+    if (employee && employee.superAdminId) {
+      superAdminId = employee.superAdminId;
+    } else {
+      superAdminId = userId;
+    }
+    const superAdmin = await AdminModel.findById(superAdminId);
+    if (!superAdmin) {
+      return res.status(403).json({ error: "Unauthorized access" });
+    }
+    const { categoryId } = req.params;
+    const categoryIndex = superAdmin.category.indexOf(categoryId);
+    if (categoryIndex !== -1) {
+      superAdmin.category.splice(categoryIndex, 1);
+      superAdmin.deletedCategory.push(categoryId);
+      await superAdmin.save();
+      await CategoryModel.findByIdAndDelete(categoryId);
+      return res.status(200).json({ message: "Category deleted successfully" });
+    } else {
+      return res.status(404).json({ error: "Category not found in SuperAdmin's categories" });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+
+
 export const createProduct = async (req, res) => {
   try {
     const userId = req.userAuth;

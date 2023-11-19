@@ -177,7 +177,7 @@ export const settledSupplier = async (req, res) => {
   }
   try {
     const { supplierId, productId } = req.params;
-    const { amountPaid } = req.body;
+    const { amountPaid, datePayed } = req.body;
     const supplier = await SupplierModel.findById(supplierId);
     if (!supplier) {
       return res.status(404).json({ message: "Supplier not found" });
@@ -188,16 +188,22 @@ export const settledSupplier = async (req, res) => {
     if (!suppliedProduct) {
       return res.status(404).json({ message: "Supplied product not found" });
     }
-    if (suppliedProduct.balance === 0){
+    if (suppliedProduct.balance === 0) {
       return res.status(404).json({ message: "Supplier has already been paid off" });
     }
-    let newBalance = suppliedProduct.balance - amountPaid;
+    let newBalance = Number(suppliedProduct.balance) - Number(amountPaid);
     if (newBalance < 0) {
       return res.status(400).json({ message: "Amount is bigger than balance." });
     }
-    suppliedProduct.balance = newBalance;
-    suppliedProduct.amountPaid = Number(suppliedProduct.amountPaid) + Number(amountPaid);;
-    suppliedProduct.paymentStatus = newBalance === 0 ? "Fully Paid" : "Partially Paid";
+    suppliedProduct.balance = Number(newBalance);
+    suppliedProduct.amountPaid += Number(amountPaid);
+    suppliedProduct.paymentStatus = Number(newBalance) === 0 ? "Fully Paid" : "Partially Paid";
+    const transactionEntry = {
+      amountPaid: Number(amountPaid),
+      datePayed,
+      newBalance: Number(newBalance),
+    };
+    suppliedProduct.transactionHistory.push(transactionEntry);
     await supplier.save();
     return res.status(200).json({ message: "Supplier settlement updated successfully" });
   } catch (error) {
@@ -205,6 +211,31 @@ export const settledSupplier = async (req, res) => {
     return res.status(500).json({ error: "Unable to settle supplier" });
   }
 };
+
+export const transactionHistory = async (req, res) => { 
+  const userId = req.userAuth;
+  if (!userId) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  try {
+    const { supplierId, productId } = req.params;
+    const supplier = await SupplierModel.findById(supplierId);
+    if (!supplier) {
+      return res.status(404).json({ message: 'Supplier not found' });
+    }
+    const suppliedProduct = supplier.suppliedProducts.find(
+      (product) => product._id == productId
+    );
+    if (!suppliedProduct) {
+      return res.status(404).json({ message: 'Supplied product not found' });
+    }
+    const transactionHistory = suppliedProduct.transactionHistory;
+    return res.status(200).json({ transactionHistory });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+ }
 
 export const deleteSupplier = async (req, res) => {
   const userId = req.userAuth;

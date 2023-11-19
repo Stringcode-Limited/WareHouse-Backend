@@ -1,6 +1,6 @@
 import express from 'express';
 import multer from 'multer';
-import { checkExpiringProducts, createCategory, createProduct, deleteProduct, editCategory, getAllCategories, getAllFinishedProducts, getAllProducts, getCategoryId, getDeadStockProducts, getExpiredProducts, getProductById, getProductByName, moveToDeadStock, moveToExpired, updateProduct } from '../controller/product.controller.js';
+import { checkExpiringProducts, createCategory, createProduct, deleteCategory, deleteProduct, editCategory, getAllCategories, getAllFinishedProducts, getAllProducts, getCategoryId, getDeadStockProducts, getExpiredProducts, getProductById, getProductByName, moveToDeadStock, moveToExpired, updateProduct } from '../controller/product.controller.js';
 import { loggedIn } from './../middleware/loginAccess.js';
 import { productStorage } from '../config/cloudinary.js';
 
@@ -24,6 +24,8 @@ productRouter.get('/categories', loggedIn, getAllCategories);
 productRouter.get('/get-category/:categoryId', loggedIn, getCategoryId);
 
 productRouter.put('/edit-category/:categoryId', loggedIn, editCategory);
+
+productRouter.delete('/delete-category/:categoryId', loggedIn, deleteCategory);
  
 productRouter.get('/products', loggedIn, getAllProducts);
 

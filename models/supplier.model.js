@@ -39,17 +39,25 @@ const supplierSchema = new mongoose.Schema({
             },
             balance: {
                 type: Number,
-            },
-            amountPaid: {
-                type: Number,
+                default: 0
             },
             suppliedPay: {
                 type: String,
                 enum: ["On-Loan","Fully Paid"]
             },
-            datePayed: {
-                type: Date
-            }
+            transactionHistory:[
+                {
+                    amountPaid: {
+                        type: Number,
+                    },
+                    datePayed: {
+                        type: Date
+                    },
+                    newBalance: {
+                        type: Number,
+                    },
+                }
+            ]
         },
     ],
 });
