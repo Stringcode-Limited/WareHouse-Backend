@@ -231,46 +231,49 @@ export const paidInvoice = async (req, res) => {
 
 
 
-// export const generateSalesReport = async (req, res) => {
-//   try {
-//     const userId = req.userAuth;
-//     if (!userId) {
-//       return res.status(401).json({ error: 'Unauthorized' });
-//     }
-//     const today = new Date().toISOString().split("T")[0];
-//     const invoices = await InvoiceModel.find({
-//       status: 'Paid',
-//       dueDate: today,
-//     }).populate('products.productName');
-
-//     const salesReport = [];
-//     const productMap = new Map();
-//     for (const invoice of invoices) {
-//       for (const product of invoice.products) {
-//         const productId = product.productName._id;
-//         const productName = product.productName.name;
-//         const quantity = product.quantity;
-//         const price = product.productName.price;
-//         const totalAmount = quantity * price;
-//         if (productMap.has(productId)) {
-//           const existingProduct = productMap.get(productId);
-//           existingProduct.quantity += quantity;
-//           existingProduct.totalAmount += totalAmount;
-//         } else {
-//           productMap.set(productId, {
-//             productName,
-//             quantity,
-//             price,
-//             totalAmount,
-//           });
-//         }
-//       }
-//     }
-//     salesReport.push(...productMap.values());
-//     res.status(200).json(salesReport);
-//   } catch (error) {
-//     console.error('Error generating sales report:', error);
-//     res.status(500).json({ error: 'Unable to generate sales report' });
-//   }
-// };
-
+export const deleteInvoice = async (req, res) => {
+  const userId = req.userAuth;
+  if (!userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  try {
+    const employee = await EmployeeMod.findById(userId).populate('superAdminId');
+    let superAdminId;
+    if (employee && employee.superAdminId) {
+      superAdminId = employee.superAdminId;
+    } else {
+      superAdminId = userId;
+    }
+    const superAdmin = await AdminModel.findById(superAdminId);
+    if (!superAdmin) {
+      return res.status(403).json({ error: 'Unauthorized access' });
+    }
+    const { invoiceId } = req.params;
+    const invoice = await InvoiceModel.findById(invoiceId);
+    if (!invoice) {
+      return res.status(404).json({ error: 'Invoice not found' });
+    }
+    const customerName = invoice.customer;
+    const customer = await CustomerModel.findOne({ name: customerName });
+    if (!customer) {
+      return res.status(404).json({ error: 'Customer not found' });
+    }
+    const customerId = customer._id;
+    if (!superAdmin.customers.includes(customerId.toString())) {
+      return res.status(403).json({ error: 'Unauthorized access' });
+    }
+    const invoiceIndex = customer.invoice.indexOf(invoiceId);
+    if (invoiceIndex !== -1) {
+      customer.invoice.splice(invoiceIndex, 1);
+      await customer.save();
+      superAdmin.deletedInvoices.push(invoice);
+      await superAdmin.save();
+      return res.status(200).json({ message: 'Invoice deleted successfully' });
+    } else {
+      return res.status(404).json({ error: 'Invoice not found in customer\'s invoices' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
