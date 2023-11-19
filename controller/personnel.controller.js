@@ -137,13 +137,28 @@ export const getAllEmployees = async (req, res) => {
     return res.status(401).json({ error: "Unauthorized" });
   }
   try {
-    const employees = await EmployeeMod.find({ superAdminId: userId });
+    let employees;
+    const employee = await EmployeeMod.findById(userId);
+    if (employee && employee.superAdminId) {
+      const superAdmin = await AdminModel.findById(employee.superAdminId).populate("employees");
+      if (!superAdmin) {
+        return res.status(404).json({ message: "SuperAdmin not found." });
+      }
+      employees = superAdmin.employees;
+    } else {
+      const superAdmin = await AdminModel.findById(userId).populate("employees");
+      if (!superAdmin) {
+        return res.status(404).json({ message: "SuperAdmin not found." });
+      }
+      employees = superAdmin.employees;
+    }
     res.status(200).json(employees);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
 
 export const getEmployeeById = async (req, res) => {
   const userId = req.userAuth;
@@ -592,32 +607,35 @@ export const editStaff = async (req, res) => {
 };
 
 export const deleteStaff = async (req, res) => {
-  const adminId = req.userAuth;
+  const userId = req.userAuth;
   const { employeeId } = req.params;
   try {
-    const admin = await AdminModel.findById(adminId).populate("employees");
-    if (!admin) {
-      return res.status(404).json({ message: "Admin not found." });
+    let superadmin;
+    const employee = await EmployeeMod.findById(userId);
+    if (employee && employee.superAdminId) {
+      superadmin = await AdminModel.findById(employee.superAdminId).populate("employees");
+    } else {
+      superadmin = await AdminModel.findById(userId).populate("employees");
     }
-    const staffIndex = admin.employees.findIndex(
+    if (!superadmin) {
+      return res.status(404).json({ message: "SuperAdmin not found." });
+    }
+    const staffIndex = superadmin.employees.findIndex(
       (emp) => emp._id.toString() === employeeId
     );
     if (staffIndex === -1) {
-      return res.status(404).json({ message: "Staff not found." });
-    }
-    admin.employees.splice(staffIndex, 1);
-    await admin.save();
-    const employee = await EmployeeMod.findById(employeeId);
-    if (!employee) {
       return res.status(404).json({ message: "Employee not found." });
     }
-    await EmployeeMod.findByIdAndDelete(employeeId);
-    return res.status(200).json({ message: "Staff deleted successfully." });
+    const deletedEmployee = superadmin.employees.splice(staffIndex, 1)[0];
+    superadmin.deletedStaffs.push(deletedEmployee);
+    await superadmin.save();
+    return res.status(200).json({ message: "Employee deleted successfully." });
   } catch (error) {
     console.error("Error:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
 
 export const getUserById = async (req, res) => {
   try {
