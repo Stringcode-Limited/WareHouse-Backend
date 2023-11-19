@@ -205,3 +205,37 @@ export const settledSupplier = async (req, res) => {
     return res.status(500).json({ error: "Unable to settle supplier" });
   }
 };
+
+export const deleteSupplier = async (req, res) => {
+  const userId = req.userAuth;
+  if (!userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  try {
+    const employee = await EmployeeMod.findById(userId).populate('superAdminId');
+    let superAdminId;
+    if (employee && employee.superAdminId) {
+      superAdminId = employee.superAdminId;
+    } else {
+      superAdminId = userId;
+    }
+    const superAdmin = await AdminModel.findById(superAdminId);
+    if (!superAdmin) {
+      return res.status(403).json({ error: "Unauthorized access" });
+    }
+    const { supplierId } = req.params;
+    const supplierIndex = superAdmin.suppliers.indexOf(supplierId);
+    if (supplierIndex !== -1) {
+      superAdmin.suppliers.splice(supplierIndex, 1);
+      superAdmin.deletedSuppliers.push(supplierId);
+      await superAdmin.save();
+      await SupplierModel.findByIdAndDelete(supplierId);
+      return res.status(200).json({ message: "Supplier deleted successfully" });
+    } else {
+      return res.status(404).json({ error: "Supplier not found in SuperAdmin's suppliers" });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};

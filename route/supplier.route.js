@@ -8,6 +8,7 @@ import {
   getSuppliersStat,
   settledSupplier,
   updateSupplierBasicInfo,
+  deleteSupplier,
 } from "./../controller/supplier.controller.js";
 
 const supplyRoute = express.Router();
@@ -25,5 +26,7 @@ supplyRoute.get("/getSupplier/:supplierId", loggedIn, getSupplierById);
 supplyRoute.get("/suppliers-products/:supplierId", loggedIn, getSuppliersStat);
 
 supplyRoute.put("/settle-supply/:supplierId/:productId", loggedIn, settledSupplier);
+
+supplyRoute.delete("/delete-supplier/:supplierId", loggedIn, deleteSupplier);
 
 export default supplyRoute;
