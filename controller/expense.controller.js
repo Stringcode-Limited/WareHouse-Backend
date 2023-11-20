@@ -4,19 +4,17 @@ import ExpenseMod from './../models/expense.model.js';
 
 
 export const createExpense = async (req, res) => {
-  const userId = req.userAuth;
-  if (!userId) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
   try {
+    const userId = req.userAuth;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
     const { title, totalAmount, amountPaid, description, category, datePaid } = req.body;
     const totalAmountInt = parseInt(totalAmount);
     const amountPaidInt = parseInt(amountPaid);
-
     if (totalAmountInt < 0 || amountPaidInt < 0) {
       return res.status(400).json({ message: 'Please enter accurate numbers.' });
     }
-
     let paymentStatus;
     if (amountPaidInt < totalAmountInt) {
       paymentStatus = 'Partially Paid';
@@ -25,27 +23,27 @@ export const createExpense = async (req, res) => {
     } else {
       return res.status(400).json({ message: 'The amount paid is greater than the total amount.' });
     }
-
     const existingExpense = await ExpenseMod.findOne({ title, paymentStatus: 'Fully Paid', datePaid });
     if (existingExpense) {
       return res.status(400).json({ message: 'Expense already marked as fully paid on the same date.' });
     }
-
     const balance = totalAmountInt - amountPaidInt;
-
     const newExpense = new ExpenseMod({
       title,
       totalAmount: totalAmountInt,
-      amountPaid: amountPaidInt,
       description,
       category,
       paymentStatus,
       balance,
-      datePaid,
+      transactionHistory: [
+        {
+          amountPaid: amountPaidInt,
+          datePaid,
+          newBalance: balance,
+        },
+      ],
     });
-
     await newExpense.save();
-
     const employee = await EmployeeMod.findById(userId).populate('superAdminId');
     if (employee) {
       const superAdmin = await AdminModel.findById(employee.superAdminId);
@@ -69,8 +67,6 @@ export const createExpense = async (req, res) => {
     return res.status(500).json({ message: 'Internal Server Error' });
   }
 };
-
-
 
 
 export const getAllExpenses = async (req, res) => {
@@ -112,7 +108,6 @@ export const getAllExpenses = async (req, res) => {
         return res.status(404).json({ message: 'User not found.' });
       }
     }
-
     return res.status(200).json({ expenses, totalAmountPaidForCurrentMonth });
   } catch (error) {
     console.error('Error:', error);
@@ -121,47 +116,68 @@ export const getAllExpenses = async (req, res) => {
 };
 
 
-export const updateExpense = async (req, res) => {
-  const userId = req.userAuth;
-  if (!userId) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
+export const getExpenseTransactionsHistory = async(req, res) =>{
   try {
     const expenseId = req.params.expenseId;
-    const { amountPaid } = req.body;
+    const expense = await ExpenseMod.findById(expenseId);
+    if (!expense) {
+      return res.status(404).json({ message: 'Expense not found.' });
+    }
+    return res.status(200).json({ transactionHistory: expense.transactionHistory });
+  } catch (error) {
+    console.error('Error:', error);
+    return res.status(500).json({ message: 'Internal Server Error' });
+  }
+}
+
+export const updateExpense = async (req, res) => {
+  try {
+    const userId = req.userAuth;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const expenseId = req.params.expenseId;
+    const { amountPaid, datePaid } = req.body;
     if (amountPaid <= 0) {
-      return res.status(400).json({ message: "Amount paid must be a positive value." });
+      return res.status(400).json({ message: 'Amount paid must be a positive value.' });
     }
     const expense = await ExpenseMod.findById(expenseId);
     if (!expense) {
-      return res.status(404).json({ message: "Expense not found." });
+      return res.status(404).json({ message: 'Expense not found.' });
     }
-    if (expense.paymentStatus === "Fully Paid") {
-      return res.status(400).json({ message: "Expense is already fully paid." });
+    if (expense.paymentStatus === 'Fully Paid') {
+      return res.status(400).json({ message: 'Expense is already fully paid.' });
     }
     let newBalance = expense.balance - amountPaid;
     if (newBalance < 0) {
-      return res.status(400).json({ message: "Amount is bigger than balance." });
+      return res.status(400).json({ message: 'Amount is bigger than balance.' });
     }
-    const paymentStatus = newBalance === 0 ? "Fully Paid" : "Partially Paid";
+    const paymentStatus = newBalance === 0 ? 'Fully Paid' : 'Partially Paid';
     const updatedExpense = await ExpenseMod.findByIdAndUpdate(
       expenseId,
       {
         amountPaid: Number(expense.amountPaid) + Number(amountPaid),
         balance: newBalance,
         paymentStatus,
+        $push: {
+          transactionHistory: {
+            amountPaid,
+            datePaid,
+            newBalance,
+          },
+        },
       },
       { new: true }
     );
     if (amountPaid === 0) {
-      return res.status(400).json({ message: "Please enter an accurate figure for amount paid." });
+      return res.status(400).json({ message: 'Please enter an accurate figure for amount paid.' });
     }
     return res.status(200).json({
-      status: "Success",
+      status: 'Success',
       data: updatedExpense,
     });
   } catch (error) {
-    console.error("Error:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
+    console.error('Error:', error);
+    return res.status(500).json({ message: 'Internal Server Error' });
   }
 };

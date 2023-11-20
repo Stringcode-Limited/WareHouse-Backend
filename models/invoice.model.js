@@ -31,15 +31,28 @@ const invoiceSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
-  paymentMethod: {
-    type: String,
-  },
   amountPaid: {
     type: Number,
   },
   balance: {
     type: Number,
-  }
+  },  
+  transactionHistory:[
+    {
+        amountPaid: {
+            type: Number,
+        },
+        datePaid: {
+            type: Date
+        },
+        newBalance: {
+            type: Number,
+        },
+        paymentMethod: {
+          type: String,
+        },
+    }
+]
 });
 
 const InvoiceModel = mongoose.model("Invoice", invoiceSchema);

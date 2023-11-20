@@ -4,12 +4,6 @@ const expenseSchema = new mongoose.Schema({
   title: {
     type: String,
   },
-  totalAmount: {
-    type: Number,
-  },
-  amountPaid: {
-    type: Number,
-  },
   description: {
     type: String,
   },
@@ -23,9 +17,19 @@ const expenseSchema = new mongoose.Schema({
   balance: {
     type: Number,
   },
-  datePaid: {
-    type: Date,
-  },
+  transactionHistory:[
+    {
+        amountPaid: {
+            type: Number,
+        },
+        datePaid: {
+            type: Date
+        },
+        newBalance: {
+            type: Number,
+        },
+    }
+]
 });
 
 const ExpenseMod = mongoose.model('Expense', expenseSchema);

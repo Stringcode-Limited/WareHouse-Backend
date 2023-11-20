@@ -14,7 +14,7 @@ export const createInvoice = async (req, res) => {
   }
   try {
     let superAdminId;
-    const employee = await EmployeeMod.findById(userId).populate("superAdminId");
+    const employee = await EmployeeMod.findById(userId).populate('superAdminId');
     if (employee && employee.superAdminId) {
       superAdminId = employee.superAdminId;
     } else {
@@ -27,6 +27,7 @@ export const createInvoice = async (req, res) => {
       dueDate,
       paymentMethod,
       amountPaid,
+      datePaid,
     } = req.body;
     let total = 0;
     for (const product of products) {
@@ -61,10 +62,16 @@ export const createInvoice = async (req, res) => {
       dueDate,
       customer,
       total,
-      paymentMethod,
       amountPaid,
       balance,
     });
+    const transactionEntry = {
+      amountPaid: Number(amountPaid),
+      datePaid,
+      newBalance: Number(balance),
+      paymentMethod
+    };
+    newInvoice.transactionHistory.push(transactionEntry);
     await newInvoice.save();
     existingCustomer.invoice.push(newInvoice._id);
     await existingCustomer.save();
@@ -74,9 +81,6 @@ export const createInvoice = async (req, res) => {
     return res.status(500).json({ message: 'Internal Server Error' });
   }
 };
-
-
-
 
 
 export const getAllInvoices = async (req, res) => {
@@ -153,6 +157,26 @@ export const getInvoiceItems = async (req, res) => {
   }
 };
 
+export const invoiceTransactionHistory = async(req,res)=>{
+  const user = req.userAuth;
+  if (!user) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  try {
+    const invoiceId = req.params.invoiceId;
+    const invoice = await InvoiceModel.findById(invoiceId);
+    if (!invoice) {
+      console.error('Error: Invoice not found.');
+      return res.status(404).json({ message: 'Invoice not found.' });
+    }
+    return res.status(200).json({
+      data: invoice.transactionHistory,
+    });
+  } catch (error) {
+    console.error('Error in getInvoiceHistory:', error);
+    res.status(500).json({ error: 'Unable to retrieve invoice transaction history.' });
+  }
+}
 
 
 export const unpaidInvoice = async (req, res) => {
@@ -187,19 +211,19 @@ export const unpaidInvoice = async (req, res) => {
 export const paidInvoice = async (req, res) => {
   const user = req.userAuth;
   if (!user) {
-    return res.status(401).json({ error: "Unauthorized" });
+    return res.status(401).json({ error: 'Unauthorized' });
   }
   try {
     const invoiceId = req.params.invoiceId;
     const invoice = await InvoiceModel.findById(invoiceId);
     if (!invoice) {
-      console.error("Error: Invoice not found.");
-      return res.status(404).json({ message: "Invoice not found." });
+      console.error('Error: Invoice not found.');
+      return res.status(404).json({ message: 'Invoice not found.' });
     }
-    if (invoice.status === "Paid" || invoice.balance === 0) {
-      return res.status(400).json({ message: "Invoice is already paid off." });
+    if (invoice.status === 'Paid' || invoice.balance === 0) {
+      return res.status(400).json({ message: 'Invoice is already paid off.' });
     }
-    const { amountPaid, paymentMethod } = req.body;
+    const { amountPaid, paymentMethod, datePaid } = req.body;
     if (amountPaid <= 0) {
       return res.status(400).json({ error: 'Amount paid must be a positive number.' });
     }
@@ -208,27 +232,32 @@ export const paidInvoice = async (req, res) => {
     }
     const newBalance = invoice.balance - amountPaid;
     const newAmountPaid = Number(invoice.amountPaid) + Number(amountPaid);
-    const newStatus = newBalance === 0 ? "Paid" : "Partially Paid";
+    const newStatus = newBalance === 0 ? 'Paid' : 'Partially Paid';
     const settledInvoice = await InvoiceModel.findByIdAndUpdate(
       invoiceId,
       {
         status: newStatus,
         amountPaid: newAmountPaid,
         balance: newBalance,
-        paymentMethod: paymentMethod,
       },
       { new: true }
     );
+    const transactionEntry = {
+      amountPaid: Number(amountPaid),
+      datePaid,
+      newBalance: Number(newBalance),
+      paymentMethod: paymentMethod,
+    };
+    settledInvoice.transactionHistory.push(transactionEntry);
     res.status(200).json({
       data: settledInvoice,
-      message: "Invoice settled successfully.",
+      message: 'Invoice settled successfully.',
     });
   } catch (error) {
-    console.error("Error in settleInvoice:", error);
-    res.status(500).json({ error: "Unable to settle the invoice." });
+    console.error('Error in settleInvoice:', error);
+    res.status(500).json({ error: 'Unable to settle the invoice.' });
   }
 };
-
 
 
 export const deleteInvoice = async (req, res) => {
