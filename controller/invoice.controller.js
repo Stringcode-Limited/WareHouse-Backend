@@ -249,6 +249,7 @@ export const paidInvoice = async (req, res) => {
       paymentMethod: paymentMethod,
     };
     settledInvoice.transactionHistory.push(transactionEntry);
+    await settledInvoice.save();
     res.status(200).json({
       data: settledInvoice,
       message: 'Invoice settled successfully.',
@@ -258,6 +259,7 @@ export const paidInvoice = async (req, res) => {
     res.status(500).json({ error: 'Unable to settle the invoice.' });
   }
 };
+
 
 
 export const deleteInvoice = async (req, res) => {
