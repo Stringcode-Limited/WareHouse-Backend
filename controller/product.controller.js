@@ -201,11 +201,38 @@ export const createProduct = async (req, res) => {
       belongsTo: userId,
     });
     if (existingProduct) {
-      existingProduct.quantity =
-        Number(existingProduct.quantity) + Number(quantity);
-      existingProduct.lastSupplied = new Date().toISOString();
-      await existingProduct.save();
-      return res.status(200).json({ message: "Product updated successfully." });
+      if (existingProduct.availability !== "Available") {
+        // If the existing product is not 'Available', create a new one
+        const superAdminId = existingProduct.belongsTo;
+
+        const newProduct = new ProductModel({
+          name,
+          description,
+          price,
+          quantity,
+          category,
+          availability: "Available",
+          expirationDate,
+          lastSupplied: new Date().toISOString(),
+          supplier,
+          belongsTo: superAdminId,
+        });
+
+        await newProduct.save();
+        const superAdmin = await AdminModel.findById(superAdminId);
+        if (superAdmin) {
+          superAdmin.products.push(newProduct._id);
+          await superAdmin.save();
+          return res.status(201).json({ message: "Product created successfully." });
+        } else {
+          return res.status(404).json({ message: "SuperAdmin not found." });
+        }
+      } else {
+        existingProduct.quantity = Number(existingProduct.quantity) + Number(quantity);
+        existingProduct.lastSupplied = new Date().toISOString();
+        await existingProduct.save();
+        return res.status(200).json({ message: "Product updated successfully." });
+      }
     }
     const employee = await EmployeeMod.findById(userId).populate(
       "superAdminId"
@@ -243,6 +270,7 @@ export const createProduct = async (req, res) => {
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
 
 export const getAllProducts = async (req, res) => {
   const userId = req.userAuth;
@@ -292,7 +320,7 @@ export const getAllProducts = async (req, res) => {
               product.availability === "Available" ||
               product.availability === "Out-of-Stock"
           );
-      }
+      } 
     }
     return res.status(200).json({ products });
   } catch (error) {
@@ -370,42 +398,6 @@ export const getDeadStockProducts = async (req, res) => {
   }
 };
 
-export const getAllFinishedProducts = async (req, res) => {
-  try {
-    const products = await ProductModel.find();
-    const availableProducts = products.filter(
-      (product) => product.quantity > 0
-    );
-    const outOfStockProducts = products.filter(
-      (product) => product.quantity === 0
-    );
-    if (outOfStockProducts.length > 0) {
-      await ProductModel.updateMany(
-        { _id: { $in: outOfStockProducts.map((product) => product._id) } },
-        { availability: "Out-of-Stock" }
-      );
-    }
-    if (availableProducts.length > 0) {
-      await ProductModel.updateMany(
-        { _id: { $in: availableProducts.map((product) => product._id) } },
-        { availability: "Available" }
-      );
-    }
-    const outOfStockProductsUpdated = await ProductModel.find({
-      availability: "Out-of-Stock",
-    });
-    if (outOfStockProductsUpdated.length === 0) {
-      return res.json({ message: "No products are out of stock" });
-    }
-    res.json({
-      status: "Success",
-      data: outOfStockProductsUpdated,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-};
 
 export const getExpiredProducts = async (req, res) => {
   const userId = req.userAuth;
@@ -579,17 +571,13 @@ export const checkExpiringProducts = async (req, res) => {
       ).populate("products");
       if (superAdmin) {
         expiringProducts = superAdmin.products.filter((product) => {
-          const expirationDate = new Date(product.expirationDate);
-          const daysRemaining = Math.floor(
-            (expirationDate - today) / (1000 * 60 * 60 * 24)
-          );
-
           return (
-            (expirationDate <= oneMonthLater &&
-              expirationDate > twentyDaysLater) ||
-            (expirationDate <= twentyDaysLater &&
-              expirationDate > tenDaysLater) ||
-            (product.quantity <= 10 && product.quantity > 0)
+            product.availability === "Available" &&
+            ((new Date(product.expirationDate) <= oneMonthLater &&
+              new Date(product.expirationDate) > twentyDaysLater) ||
+              (new Date(product.expirationDate) <= twentyDaysLater &&
+                new Date(product.expirationDate) > tenDaysLater) ||
+              (product.quantity <= 10 && product.quantity > 0))
           );
         });
       }
@@ -597,16 +585,13 @@ export const checkExpiringProducts = async (req, res) => {
       const superAdmin = await AdminModel.findById(userId).populate("products");
       if (superAdmin) {
         expiringProducts = superAdmin.products.filter((product) => {
-          const expirationDate = new Date(product.expirationDate);
-          const daysRemaining = Math.floor(
-            (expirationDate - today) / (1000 * 60 * 60 * 24)
-          );
           return (
-            (expirationDate <= oneMonthLater &&
-              expirationDate > twentyDaysLater) ||
-            (expirationDate <= twentyDaysLater &&
-              expirationDate > tenDaysLater) ||
-            (product.quantity <= 10 && product.quantity > 0)
+            product.availability === "Available" &&
+            ((new Date(product.expirationDate) <= oneMonthLater &&
+              new Date(product.expirationDate) > twentyDaysLater) ||
+              (new Date(product.expirationDate) <= twentyDaysLater &&
+                new Date(product.expirationDate) > tenDaysLater) ||
+              (product.quantity <= 10 && product.quantity > 0))
           );
         });
       }

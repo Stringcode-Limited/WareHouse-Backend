@@ -7,6 +7,9 @@ const expenseSchema = new mongoose.Schema({
   description: {
     type: String,
   },
+  totalAmount:{
+    type: Number,
+  },
   category: {
     type: String, 
   },
@@ -24,6 +27,9 @@ const expenseSchema = new mongoose.Schema({
         },
         datePaid: {
             type: Date
+        },
+        paymentMethod: {
+          type: String,
         },
         newBalance: {
             type: Number,

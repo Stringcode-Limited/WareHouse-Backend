@@ -53,6 +53,9 @@ const supplierSchema = new mongoose.Schema({
                     datePayed: {
                         type: Date
                     },
+                    paymentMethod:{
+                        type: String
+                    },
                     newBalance: {
                         type: Number,
                     },

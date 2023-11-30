@@ -66,7 +66,7 @@ export const createExpense = async (req, res) => {
     console.error('Error:', error);
     return res.status(500).json({ message: 'Internal Server Error' });
   }
-};
+}; 
 
 
 export const getAllExpenses = async (req, res) => {
@@ -75,9 +75,9 @@ export const getAllExpenses = async (req, res) => {
     return res.status(401).json({ error: 'Unauthorized' });
   }
   try {
-    const currentDate = new Date();
-    const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-    const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+    // const currentDate = new Date();
+    // const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    // const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
     let expenses;
     let totalAmountPaidForCurrentMonth = 0;
     const employee = await EmployeeMod.findById(userId).populate('superAdminId');
@@ -86,7 +86,7 @@ export const getAllExpenses = async (req, res) => {
       if (superAdmin) {
         expenses = await ExpenseMod.find({
           _id: { $in: superAdmin.expenses },
-          datePaid: { $gte: startOfMonth, $lte: endOfMonth },
+          // datePaid: { $gte: startOfMonth, $lte: endOfMonth },
         });
         totalAmountPaidForCurrentMonth = expenses.reduce(
           (total, expense) => total + (expense.amountPaid || 0),
@@ -98,7 +98,7 @@ export const getAllExpenses = async (req, res) => {
       if (superAdmin) {
         expenses = await ExpenseMod.find({
           _id: { $in: superAdmin.expenses },
-          datePaid: { $gte: startOfMonth, $lte: endOfMonth },
+          // datePaid: { $gte: startOfMonth, $lte: endOfMonth },
         });
         totalAmountPaidForCurrentMonth = expenses.reduce(
           (total, expense) => total + (expense.amountPaid || 0),
@@ -137,7 +137,7 @@ export const updateExpense = async (req, res) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
     const expenseId = req.params.expenseId;
-    const { amountPaid, datePaid } = req.body;
+    const { amountPaid, datePaid, paymentMethod } = req.body;
     if (amountPaid <= 0) {
       return res.status(400).json({ message: 'Amount paid must be a positive value.' });
     }
@@ -163,6 +163,7 @@ export const updateExpense = async (req, res) => {
           transactionHistory: {
             amountPaid,
             datePaid,
+            paymentMethod,
             newBalance,
           },
         },

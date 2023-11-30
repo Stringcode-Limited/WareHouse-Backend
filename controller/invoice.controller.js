@@ -6,6 +6,7 @@ import DiscountMod from './../models/discount.model.js';
 import TaxModel from './../models/tax.model.js';
 import EmployeeMod from "../models/employee.model.js";
 import { createSalesReport } from './report.controller.js';
+import {sendSoldEmail} from './../config/email.js';
 
 export const createInvoice = async (req, res) => {
   const userId = req.userAuth;
@@ -73,6 +74,7 @@ export const createInvoice = async (req, res) => {
     };
     newInvoice.transactionHistory.push(transactionEntry);
     await newInvoice.save();
+    await sendSoldEmail(products,total)
     existingCustomer.invoice.push(newInvoice._id);
     await existingCustomer.save();
     return res.status(201).json({ message: 'Invoice created successfully.' });
@@ -98,7 +100,7 @@ export const getAllInvoices = async (req, res) => {
         populate: { path: 'invoice' }
       });
       if (superAdmin) {
-        for (const customer of superAdmin.customers) {
+        for (const customer of superAdmin.customers) { 
           const customerInvoices = customer.invoice;
           invoices.push(...customerInvoices);
         }

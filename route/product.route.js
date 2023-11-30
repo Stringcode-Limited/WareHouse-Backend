@@ -1,6 +1,6 @@
 import express from 'express';
 import multer from 'multer';
-import { checkExpiringProducts, createCategory, createProduct, deleteCategory, deleteProduct, editCategory, getAllCategories, getAllFinishedProducts, getAllProducts, getCategoryId, getDeadStockProducts, getExpiredProducts, getProductById, getProductByName, moveToDeadStock, moveToExpired, updateProduct } from '../controller/product.controller.js';
+import { checkExpiringProducts, createCategory, createProduct, deleteCategory, deleteProduct, editCategory, getAllCategories, getAllProducts, getCategoryId, getDeadStockProducts, getExpiredProducts, getProductById, getProductByName, moveToDeadStock, moveToExpired, updateProduct } from '../controller/product.controller.js';
 import { loggedIn } from './../middleware/loginAccess.js';
 import { productStorage } from '../config/cloudinary.js';
 
@@ -38,8 +38,6 @@ productRouter.put('/dead-stock/:productId', loggedIn, moveToDeadStock);
 productRouter.put('/expired/:productId', loggedIn, moveToExpired);
 
 productRouter.get('/dead-stocks', loggedIn, getDeadStockProducts);
-
-productRouter.get('/out-of-stock', loggedIn, getAllFinishedProducts);
 
 productRouter.get('/expired', loggedIn, getExpiredProducts);
 

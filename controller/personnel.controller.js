@@ -71,6 +71,12 @@ export const logIn = async (req, res) => {
         message: "User not found",
       });
     }
+    if (existingUser.availability === "Inactive") {
+      return res.json({
+        status: "Error",
+        message: "User is inactive. Contact your administrator for assistance.",
+      });
+    }
     const isPasswordValid = await bcrypt.compare(
       password,
       existingUser.password
@@ -151,6 +157,34 @@ export const getAllEmployees = async (req, res) => {
         return res.status(404).json({ message: "SuperAdmin not found." });
       }
       employees = superAdmin.employees;
+    }
+    res.status(200).json(employees);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const getSalesmenEmployees = async (req, res) => {
+  const userId = req.userAuth;
+  if (!userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  try {
+    let employees;
+    const employee = await EmployeeMod.findById(userId);
+    if (employee && employee.superAdminId) {
+      const superAdmin = await AdminModel.findById(employee.superAdminId).populate("employees");
+      if (!superAdmin) {
+        return res.status(404).json({ message: "SuperAdmin not found." });
+      }
+      employees = superAdmin.employees.filter(employee => employee.role === "Salesman");
+    } else {
+      const superAdmin = await AdminModel.findById(userId).populate("employees");
+      if (!superAdmin) {
+        return res.status(404).json({ message: "SuperAdmin not found." });
+      }
+      employees = superAdmin.employees.filter(employee => employee.role === "Salesman");
     }
     res.status(200).json(employees);
   } catch (error) {
@@ -436,7 +470,7 @@ export const marketerSale = async (req, res) => {
     });
     if (!existingProduct || existingProduct.quantity < quantity) {
       return res.status(400).json({
-        error: `Product '${productName}' not available in sufficient quantity.`,
+        error: `${productName} not available in sufficient quantity.`,
       });
     }
     existingProduct.quantity -= quantity;
@@ -462,15 +496,15 @@ export const getEmployeeMarketSale = async (req, res) => {
   if (!userId) {
     return res.status(401).json({ error: "Unauthorized" });
   }
-  const targetEmployeeId = req.params.employeeId;
+  const employeeId = req.params.employeeId;
   try {
-    const targetEmployee = await EmployeeMod.findById(targetEmployeeId);
-    if (!targetEmployee) {
+    const employee = await EmployeeMod.findById(employeeId);
+    if (!employee) {
       return res
         .status(400)
-        .json({ error: `Employee with ID '${targetEmployeeId}' not found.` });
+        .json({ error: `Employee with ID '${employeeId}' not found.` });
     }
-    return res.status(200).json({ marketSale: targetEmployee.outMarket });
+    return res.status(200).json({ marketSale: employee.outMarket });
   } catch (error) {
     console.error("Error:", error);
     return res.status(500).json({ message: "Internal Server Error" });
@@ -478,6 +512,10 @@ export const getEmployeeMarketSale = async (req, res) => {
 };
 
 export const employeeMarketSaleById = async (req, res) => {
+  const userId = req.userAuth;
+  if (!userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
   const targetEmployeeId = req.params.employeeId;
   const marketSaleId = req.params.marketSaleId;
   try {
@@ -503,6 +541,10 @@ export const employeeMarketSaleById = async (req, res) => {
 };
 
 export const updateMarketSale = async (req, res) => {
+  const userId = req.userAuth;
+  if (!userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
   const employeeId = req.params.employeeId;
   const marketSaleId = req.params.marketSaleId;
   try {
@@ -510,20 +552,25 @@ export const updateMarketSale = async (req, res) => {
     if (!user) {
       return res.status(400).json({ error: `Employee with ID '${employeeId}' not found.` });
     }
-
     const marketSale = user.outMarket.id(marketSaleId);
     if (!marketSale) {
       return res.status(400).json({ error: `Market sale with ID '${marketSaleId}' not found for the employee.` });
     }
-    const { quantitySold } = req.body;
-    console.log('Original Market Sale:', marketSale);
-    console.log('Quantity Sold:', quantitySold);
-    const totalQuantity = Number(marketSale.quantityReturned) + Number(quantitySold);
-    console.log('Total Quantity:', totalQuantity);
-    console.log('Market Sale Quantity:', marketSale.quantity);
+    const { quantitySold, quantityReturned } = req.body;
+    const sumQuantity = Number(quantitySold) + Number(quantityReturned);
+    if (sumQuantity > marketSale.quantity) {
+      return res.status(400).json({ error: "Inaccurate quantity input." });
+    }
+    const totalQuantity = Number(marketSale.quantitySold) + Number(quantitySold) +
+                          Number(marketSale.quantityReturned) + Number(quantityReturned);
     if (totalQuantity > marketSale.quantity) {
-      console.log('Total quantity check failed');
-      return res.status(400).json({ error: "Total quantity sold and returned exceeds the available quantity." });
+      return res.status(400).json({ error: "Inaccurate quantity input." });
+    }
+
+    const totalSoldQuantity = Number(marketSale.quantityReturned) + Number(quantitySold);
+    const totalReturnedQuantity = Number(marketSale.quantitySold) + Number(quantityReturned);
+    if (totalSoldQuantity > marketSale.quantity || totalReturnedQuantity > marketSale.quantity) {
+      return res.status(400).json({ error: "Inaccurate quantity input" });
     }
     marketSale.quantitySold += Number(quantitySold);
     marketSale.amountMade = Number(marketSale.quantitySold) * Number(marketSale.unitPrice);
@@ -533,50 +580,36 @@ export const updateMarketSale = async (req, res) => {
     } else {
       marketSale.sellPercentage = 0;
     }
+    marketSale.quantityReturned += Number(quantityReturned);
+    marketSale.amountOwed = marketSale.quantity === totalReturnedQuantity ? 0 : Number(marketSale.amountOwed) - Number(quantityReturned * marketSale.unitPrice);
     await user.save();
-    return res
-      .status(200)
-      .json({ message: "Market sale updated successfully." });
+    return res.status(200).json({ message: "Market sale updated successfully." });
   } catch (error) {
     console.error("Error:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
-export const setQuantityReturned = async (req, res) => {
+export const deleteMarketSale = async(req,res)=>{
+  const userId = req.userAuth;
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
   const employeeId = req.params.employeeId;
   const marketSaleId = req.params.marketSaleId;
   try {
     const user = await EmployeeMod.findById(employeeId).populate("outMarket");
-    if (!user) {
-      return res
-        .status(400)
-        .json({ error: `Employee with ID '${employeeId}' not found.` });
-    }
+    if (!user) return res.status(400).json({ error: `Employee with ID '${employeeId}' not found.` });
     const marketSale = user.outMarket.id(marketSaleId);
-    if (!marketSale) {
-      return res
-        .status(400)
-        .json({
-          error: `Market sale with ID '${marketSaleId}' not found for the employee.`,
-        });
-    }
-    const { quantityReturned } = req.body;
-    const totalQuantity = Number(marketSale.quantitySold) + Number(quantityReturned);
-    if (totalQuantity > marketSale.quantity) {
-      return res.status(400).json({ error: "Quantity returned is not accurate." });
-    }
-    marketSale.quantityReturned += quantityReturned;
-    marketSale.amountOwed = Number(marketSale.amountOwed) - Number(quantityReturned * marketSale.unitPrice);
+    if (!marketSale) return res.status(400).json({ error: `Market sale with ID '${marketSaleId}' not found for the employee.` });
+    user.outMarket.pull(marketSale);
     await user.save();
-    return res
-      .status(200)
-      .json({ message: "Quantity returned set successfully." });
+    return res.status(200).json({ message: "Market sale deleted successfully." });
   } catch (error) {
     console.error("Error:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
-};
+}
+
+
 
 export const editStaff = async (req, res) => {
   const userId = req.userAuth;

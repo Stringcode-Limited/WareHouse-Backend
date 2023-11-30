@@ -177,7 +177,7 @@ export const settledSupplier = async (req, res) => {
   }
   try {
     const { supplierId, productId } = req.params;
-    const { amountPaid, datePayed } = req.body;
+    const { amountPaid, datePayed, paymentMethod } = req.body;
     const supplier = await SupplierModel.findById(supplierId);
     if (!supplier) {
       return res.status(404).json({ message: "Supplier not found" });
@@ -201,6 +201,7 @@ export const settledSupplier = async (req, res) => {
     const transactionEntry = {
       amountPaid: Number(amountPaid),
       datePayed,
+      paymentMethod,
       newBalance: Number(newBalance),
     };
     suppliedProduct.transactionHistory.push(transactionEntry);

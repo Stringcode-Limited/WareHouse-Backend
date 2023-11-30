@@ -29,6 +29,10 @@
             ref: 'SuperAdmin',
             required: true, 
         },
+        availability:{
+            type: String,
+            enum: ['Active', 'Inactive']
+        },
         outMarket: [
             {
                 productName: {

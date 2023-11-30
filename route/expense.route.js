@@ -8,7 +8,7 @@ expenseRouter.post('/new-expense', loggedIn, createExpense);
 
 expenseRouter.get('/expenses', loggedIn, getAllExpenses);
 
-expenseRouter.get('/expense-transaction/:expenseId',loggedIn,getExpenseTransactionsHistory);
+expenseRouter.get('/expense-transaction/:expenseId', loggedIn ,getExpenseTransactionsHistory);
 
 expenseRouter.put('/update-expense/:expenseId', loggedIn, updateExpense);
 
