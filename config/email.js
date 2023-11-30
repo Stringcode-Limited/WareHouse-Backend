@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
 
-export const sendSoldEmail = async (productName, total) => {
+export const sendSoldEmail = async (productName, total, superAdminEmail) => {
   try {
     const transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
@@ -11,11 +11,11 @@ export const sendSoldEmail = async (productName, total) => {
         pass: 'poic kfbv hkgr cwqe',
       },
     });
-    const email = 'ayehenz29@gmail.com';
+    // const email = 'ayehenz29@gmail.com';
 
     const mailOptions = {
       from: 'noreply.jessitel@gmail.com',
-      to: email,
+      to: superAdminEmail,
       subject: 'Products Sold - Invoice Details',
       text: `Hello Admin,\n\nYou have new sales! Here are the details:\n\n`,
       html: `<div style="font-family: 'Arial', sans-serif; color: #333; line-height: 1.6; background-color: #f4f4f4; padding: 20px; border-radius: 8px;">

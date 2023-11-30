@@ -33,6 +33,9 @@ const supplierSchema = new mongoose.Schema({
             totalFee: {
               type: Number,
             },
+            amountPaid: {
+                type: Number,
+            },
             status: {
                 type: String,
                 default: "Supplied",

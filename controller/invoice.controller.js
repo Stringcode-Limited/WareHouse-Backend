@@ -21,6 +21,8 @@ export const createInvoice = async (req, res) => {
     } else {
       superAdminId = userId;
     }
+    const superAdmin = await AdminModel.findById(superAdminId);
+    const superAdminEmail = superAdmin.email;
     const {
       products,
       customer,
@@ -74,7 +76,7 @@ export const createInvoice = async (req, res) => {
     };
     newInvoice.transactionHistory.push(transactionEntry);
     await newInvoice.save();
-    await sendSoldEmail(products,total)
+    await sendSoldEmail(products,total,superAdminEmail)
     existingCustomer.invoice.push(newInvoice._id);
     await existingCustomer.save();
     return res.status(201).json({ message: 'Invoice created successfully.' });
@@ -130,6 +132,13 @@ export const getInvoiceItems = async (req, res) => {
   if (!userId) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
+  let superAdminId;
+    const employee = await EmployeeMod.findById(userId).populate('superAdminId');
+    if (employee && employee.superAdminId) {
+      superAdminId = employee.superAdminId;
+    } else {
+      superAdminId = userId;
+    }
   const { invoiceId } = req.params;
   try {
     const invoice = await InvoiceModel.findById(invoiceId).lean();
@@ -138,7 +147,10 @@ export const getInvoiceItems = async (req, res) => {
     }
     const productsInInvoice = [];
     for (const product of invoice.products) {
-      const foundProduct = await ProductModel.findOne({ name: product.productName }).lean();
+      const foundProduct = await ProductModel.findOne({ 
+        name: product.productName, 
+        belongsTo: product.superAdminId 
+      }).lean();
       if (!foundProduct) {
         return res.status(404).json({ error: `Product with name ${product.productName} not found` });
       }
