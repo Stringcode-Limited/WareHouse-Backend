@@ -473,7 +473,6 @@ export const marketerSale = async (req, res) => {
         error: `${productName} not available in sufficient quantity.`,
       });
     }
-    existingProduct.quantity -= quantity;
     await existingProduct.save();
     employee.outMarket.push({
       productName,
