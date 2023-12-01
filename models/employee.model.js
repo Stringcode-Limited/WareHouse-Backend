@@ -31,7 +31,8 @@
         },
         availability:{
             type: String,
-            enum: ['Active', 'Inactive']
+            enum: ['Active', 'Inactive'],
+            default: 'Active'
         },
         outMarket: [
             {

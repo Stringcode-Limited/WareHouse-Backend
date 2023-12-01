@@ -23,7 +23,9 @@ import {
   employeeMarketSaleById,
   updateMarketSale,   
   deleteCustomer,
-  deleteMarketSale
+  deleteMarketSale,
+  activateEmployee,
+  deactivateEmployee
 } from "../controller/personnel.controller.js";
 
 const personnelRouter = express.Router();
@@ -43,6 +45,10 @@ personnelRouter.post("/new-customer", loggedIn, registerCustomer);
 personnelRouter.get("/customers", loggedIn, getAllCustomers);
 
 personnelRouter.put("/edit-customer/:customerId", loggedIn, editCustomer);
+
+personnelRouter.put("/activate/:employeeId", loggedIn, activateEmployee);
+
+personnelRouter.put("/de-activate/:employeeId", loggedIn, deactivateEmployee);
 
 personnelRouter.put("/edit-staff/:employeeId", loggedIn, editStaff);
 

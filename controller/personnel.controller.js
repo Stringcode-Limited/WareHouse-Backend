@@ -178,7 +178,7 @@ export const getSalesmenEmployees = async (req, res) => {
       if (!superAdmin) {
         return res.status(404).json({ message: "SuperAdmin not found." });
       }
-      employees = superAdmin.employees.filter(employee => employee.role === "Salesman");
+      employees = superAdmin.employees.filter(employee => employee.role === "Salesman" && employee.availability === "Active");
     } else {
       const superAdmin = await AdminModel.findById(userId).populate("employees");
       if (!superAdmin) {
@@ -608,6 +608,71 @@ export const deleteMarketSale = async(req,res)=>{
   }
 }
 
+export const activateEmployee = async (req, res) => {
+  const userId = req.userAuth;
+  if (!userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  try {
+    const employeeId = req.params.employeeId;
+    const employee = await EmployeeMod.findById(employeeId);
+    if (!employee) {
+      return res.status(404).json({ message: "Employee not found." });
+    }
+    if (employee.availability === 'Active') {
+      return res.status(400).json({
+        status: "Error",
+        message: "Employee is already active.",
+      });
+    }
+    await EmployeeMod.findByIdAndUpdate(
+      employeeId,
+      { availability: 'Active' },
+      { new: true }
+    );
+    return res.status(200).json({
+      status: "Success",
+      message: "Employee has been activated successfully.",
+    });
+  } catch (error) {
+    console.error("Error:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+
+export const deactivateEmployee = async (req, res) => {
+  const userId = req.userAuth;
+  if (!userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  try {
+    const employeeId = req.params.employeeId;
+    const employee = await EmployeeMod.findById(employeeId);
+
+    if (!employee) {
+      return res.status(404).json({ message: "Employee not found." });
+    }
+    if (employee.availability === 'Inactive') {
+      return res.status(400).json({
+        status: "Error",
+        message: "Employee is already inactive.",
+      });
+    }
+    await EmployeeMod.findByIdAndUpdate(
+      employeeId,
+      { availability: 'Inactive' },
+      { new: true }
+    );
+    return res.status(200).json({
+      status: "Success",
+      message: "Employee has been deactivated successfully.",
+    });
+  } catch (error) {
+    console.error("Error:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
 
 
 export const editStaff = async (req, res) => {
