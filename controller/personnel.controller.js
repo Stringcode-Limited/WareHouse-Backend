@@ -575,7 +575,7 @@ export const updateMarketSale = async (req, res) => {
     marketSale.amountMade = Number(marketSale.quantitySold) * Number(marketSale.unitPrice);
     marketSale.amountOwed = Number(marketSale.expectedProfit) - Number(marketSale.amountMade);
     if (marketSale.quantity > 0) {
-      marketSale.sellPercentage = (Number(marketSale.quantitySold) / Number(marketSale.quantity)) * 100;
+      marketSale.sellPercentage = Math.round((Number(marketSale.quantitySold) / Number(marketSale.quantity)) * 100);
     } else {
       marketSale.sellPercentage = 0;
     }
