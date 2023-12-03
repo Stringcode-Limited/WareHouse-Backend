@@ -26,7 +26,8 @@ import {
   deleteCustomer,
   deleteMarketSale,
   activateEmployee,
-  deactivateEmployee
+  deactivateEmployee,
+  nonManagerEmployees
 } from "../controller/personnel.controller.js";
 
 const personnelRouter = express.Router();
@@ -36,6 +37,8 @@ personnelRouter.post("/new-employee", loggedIn, createEmployee);
 personnelRouter.post("/login", logIn);
 
 personnelRouter.get("/staff", loggedIn, getAllEmployees);
+
+personnelRouter.get("/non-managers", loggedIn, nonManagerEmployees);
 
 personnelRouter.get("/get-staff/:employeeId", loggedIn, getEmployeeById);
 

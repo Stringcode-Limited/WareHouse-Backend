@@ -165,6 +165,36 @@ export const getAllEmployees = async (req, res) => {
   }
 };
 
+export const nonManagerEmployees = async (req, res) => {
+  const userId = req.userAuth;
+  if (!userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  try {
+    let allEmployees;
+    const employee = await EmployeeMod.findById(userId);
+    if (employee && employee.superAdminId) {
+      const superAdmin = await AdminModel.findById(employee.superAdminId).populate("employees");
+      if (!superAdmin) {
+        return res.status(404).json({ message: "SuperAdmin not found." });
+      }
+      allEmployees = superAdmin.employees;
+    } else {
+      const superAdmin = await AdminModel.findById(userId).populate("employees");
+      if (!superAdmin) {
+        return res.status(404).json({ message: "SuperAdmin not found." });
+      }
+      allEmployees = superAdmin.employees;
+    }
+    const employees = allEmployees.filter(emp => emp.role !== 'Manager');
+    res.status(200).json(employees);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+
 export const getSalesmenEmployees = async (req, res) => {
   const userId = req.userAuth;
   if (!userId) {
