@@ -184,7 +184,7 @@ export const getSalesmenEmployees = async (req, res) => {
       if (!superAdmin) {
         return res.status(404).json({ message: "SuperAdmin not found." });
       }
-      employees = superAdmin.employees.filter(employee => employee.role === "Salesman");
+      employees = superAdmin.employees.filter(employee => employee.role === "Salesman" && employee.availability === "Active");
     }
     res.status(200).json(employees);
   } catch (error) {
@@ -509,6 +509,26 @@ export const getEmployeeMarketSale = async (req, res) => {
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+export const myMarketSale = async (req, res) => {
+  const userId = req.userAuth;
+  if (!userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  try {
+    const employee = await EmployeeMod.findById(userId);
+    if (!employee) {
+      return res
+        .status(400)
+        .json({ error: `Employee with ID '${userId}' not found.` });
+    }
+    return res.status(200).json({ marketSale: employee.outMarket });
+  } catch (error) {
+    console.error("Error:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 
 export const employeeMarketSaleById = async (req, res) => {
   const userId = req.userAuth;

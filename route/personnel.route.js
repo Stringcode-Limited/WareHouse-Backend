@@ -20,6 +20,7 @@ import {
   getUserById,
   marketerSale,
   getEmployeeMarketSale,
+  myMarketSale,
   employeeMarketSaleById,
   updateMarketSale,   
   deleteCustomer,
@@ -51,7 +52,7 @@ personnelRouter.put("/activate/:employeeId", loggedIn, activateEmployee);
 personnelRouter.put("/de-activate/:employeeId", loggedIn, deactivateEmployee);
 
 personnelRouter.put("/edit-staff/:employeeId", loggedIn, editStaff);
-
+ 
 personnelRouter.delete("/delete-staff/:employeeId", loggedIn, deleteStaff);
 
 personnelRouter.get("/get-customer/:customerId", loggedIn, getCustomerById);
@@ -61,6 +62,8 @@ personnelRouter.get("/customer-invoice/:customerId", loggedIn, getCustomerInvoic
 personnelRouter.delete('/delete-customer/:customerId', loggedIn, deleteCustomer);
 
 personnelRouter.post("/issue-marketer-sale", loggedIn, marketerSale);
+
+personnelRouter.get("/my-sales/", loggedIn, myMarketSale);
 
 personnelRouter.get("/marketer-sales/:employeeId", loggedIn, getEmployeeMarketSale);
 
