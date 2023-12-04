@@ -23,7 +23,7 @@ export const createInvoice = async (req, res) => {
     }
     const superAdmin = await AdminModel.findById(superAdminId);
     const superAdminEmail = superAdmin.email;
-    console.log("adminsEmail",superAdminEmail);
+    // console.log("adminsEmail",superAdminEmail);
     const {
       products,
       customer,
