@@ -25,7 +25,7 @@ export const createSalesReport = async (invoiceId, amountPaid, superAdminId, use
         if (salesReport) {
           await Promise.all(products.map(async (product) => {
             const { productName, quantity } = product;
-            const productDetails = await ProductModel.findOne({ name: productName, belongsTo: superAdminId });
+            const productDetails = await ProductModel.findOne({ name: productName });
             if (!productDetails) {
               console.error(`Error: Product details not found for ${productName}.`);
               throw new Error(`Product details not found for ${productName}.`);

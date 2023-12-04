@@ -105,8 +105,8 @@ export const logIn = async (req, res) => {
 };
 
 export const createEmployee = async (req, res) => {
-  const loggedInAdminId = req.userAuth;
-  if (!loggedInAdminId) {
+  const userId = req.userAuth;
+  if (!userId) {
     return res.status(401).json({ error: "Unauthorized" });
   }
   try {
@@ -115,6 +115,14 @@ export const createEmployee = async (req, res) => {
     if (existingUser) {
       return res.status(400).json({ message: "Employee already exists." });
     }
+    let superAdmin;
+    const employee = await EmployeeMod.findById(userId);
+    if (employee && employee.superAdminId) {
+      superAdmin = await AdminModel.findById(employee.superAdminId);
+    } else {
+      superAdmin = await AdminModel.findById(userId);
+    }
+    console.log(superAdmin._id);
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
     const newUser = new EmployeeMod({
@@ -124,10 +132,11 @@ export const createEmployee = async (req, res) => {
       address,
       role,
       password: hashedPassword,
-      superAdminId: loggedInAdminId,
+      superAdminId: superAdmin._id,
     });
     await newUser.save();
-    const admin = await AdminModel.findById(loggedInAdminId);
+    const admin = await AdminModel.findById(superAdmin._id);
+    console.log(admin);
     admin.employees.push(newUser._id);
     await admin.save();
     res.status(201).json({ message: "Employee created successfully." });
