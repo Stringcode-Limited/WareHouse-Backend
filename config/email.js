@@ -11,8 +11,6 @@ export const sendSoldEmail = async (productName, total, superAdminEmail) => {
         pass: 'poic kfbv hkgr cwqe',
       },
     });
-    // const email = 'ayehenz29@gmail.com';
-
     const mailOptions = {
       from: 'noreply.jessitel@gmail.com',
       to: superAdminEmail,

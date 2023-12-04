@@ -75,8 +75,10 @@ export const createInvoice = async (req, res) => {
       paymentMethod
     };
     newInvoice.transactionHistory.push(transactionEntry);
+    const invoiceId = newInvoice._id
     await newInvoice.save();
-    await sendSoldEmail(products,total,superAdminEmail)
+    await createSalesReport(invoiceId, amountPaid, superAdminId, userId, res);
+    await sendSoldEmail(products,total,superAdminEmail);
     existingCustomer.invoice.push(newInvoice._id);
     await existingCustomer.save();
     return res.status(201).json({ message: 'Invoice created successfully.' });
@@ -149,7 +151,6 @@ export const getInvoiceItems = async (req, res) => {
     for (const product of invoice.products) {
       const foundProduct = await ProductModel.findOne({ 
         name: product.productName, 
-        belongsTo: product.superAdminId 
       }).lean();
       if (!foundProduct) {
         return res.status(404).json({ error: `Product with name ${product.productName} not found` });
@@ -223,8 +224,8 @@ export const unpaidInvoice = async (req, res) => {
 
 
 export const paidInvoice = async (req, res) => {
-  const user = req.userAuth;
-  if (!user) {
+  const userId = req.userAuth;
+  if (!userId) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
   try {
@@ -262,6 +263,14 @@ export const paidInvoice = async (req, res) => {
       newBalance: Number(newBalance),
       paymentMethod: paymentMethod,
     };
+    let superAdminId;
+    const employee = await EmployeeMod.findById(userId).populate('superAdminId');
+    if (employee && employee.superAdminId) {
+      superAdminId = employee.superAdminId._id;
+    } else {
+      superAdminId = userId;
+    } console.log("superAdminId",superAdminId);
+    await createSalesReport(invoiceId, amountPaid, superAdminId, userId);
     settledInvoice.transactionHistory.push(transactionEntry);
     await settledInvoice.save();
     res.status(200).json({
@@ -273,7 +282,6 @@ export const paidInvoice = async (req, res) => {
     res.status(500).json({ error: 'Unable to settle the invoice.' });
   }
 };
-
 
 
 export const deleteInvoice = async (req, res) => {

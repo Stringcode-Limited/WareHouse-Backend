@@ -7,92 +7,109 @@ import CategoryModel from '../models/category.model.js';
 import SupplierModel from './../models/supplier.model.js';
 import CustomerModel from '../models/customer.model.js';
 
-export const createSalesReport = async (invoiceId, userId, res) => {
+export const createSalesReport = async (invoiceId, amountPaid, superAdminId, userId, res) => {
   try {
     const invoice = await InvoiceModel.findById(invoiceId);
     if (!invoice) {
-      console.error("Error: Invoice not found.");
       throw new Error("Invoice not found.");
     }
-
-    console.log("Invoice found:", invoice);
-
-    const { products, total, dueDate } = invoice;
-    const salesReports = [];
+    const { products, total } = invoice;
     const employee = await EmployeeMod.findById(userId).populate("superAdminId");
     if (employee) {
       const superAdmin = await AdminModel.findById(employee.superAdminId);
       if (superAdmin) {
-        for (const product of products) {
-          const { productName, quantity } = product;
-          const productDetails = await ProductModel.findOne({ name: productName });
-          if (!productDetails) {
-            console.error(`Error: Product details not found for ${productName}.`);
-            throw new Error(`Product details not found for ${productName}.`);
-          }
-          const { price } = productDetails;
-          const existingReport = await Sales.findOne({
-            product: productName,
+        const salesReport = await Sales.findOne({
+          invoice: invoiceId,
+          date: new Date(Date.now()),
+        });
+        if (salesReport) {
+          await Promise.all(products.map(async (product) => {
+            const { productName, quantity } = product;
+            const productDetails = await ProductModel.findOne({ name: productName, belongsTo: superAdminId });
+            if (!productDetails) {
+              console.error(`Error: Product details not found for ${productName}.`);
+              throw new Error(`Product details not found for ${productName}.`);
+            }
+            const { _id: productId } = productDetails;
+            const existingProductIndex = salesReport.products.findIndex(p => p.productId.equals(productId));
+            if (existingProductIndex !== -1) {
+              salesReport.products[existingProductIndex].quantity += quantity;
+            } else {
+              salesReport.products.push({
+                productId,
+                name: productName,
+                quantity,
+              });
+            }
+          }));
+          salesReport.total += total;
+          await salesReport.save();
+        } else {
+          const newReport = new Sales({
             date: new Date(Date.now()),
+            products: await Promise.all(products.map(async (product) => {
+              const { productName, quantity } = product;
+              const productDetails = await ProductModel.findOne({ name: productName, belongsTo: superAdminId });
+              if (!productDetails) {
+                throw new Error(`Product details not found for ${productName}.`);
+              }
+              const { _id: productId } = productDetails;
+              return {
+                productId,
+                name: productName,
+                quantity
+              };
+            })),
+            total: amountPaid,
+            invoice: invoiceId,
           });
-          if (existingReport) {
-            existingReport.quantity += quantity;
-            existingReport.total += total;
-            await existingReport.save();
-            salesReports.push(existingReport);
-            console.log("Updated existing sales report:", existingReport);
-          } else {
-            const newReport = new Sales({
-              date: new Date(Date.now()),
-              product: productName,
-              quantity,
-              unitPrice: price,
-              total,
-              invoice: invoiceId,
-            });
-            await newReport.save();
-            salesReports.push(newReport);
-            console.log("Created new sales report:", newReport);
-          }
+          await newReport.save();
+          superAdmin.sales.push(newReport._id);
+          await superAdmin.save();
         }
-        superAdmin.sales.push(...salesReports.map(report => report._id));
-        await superAdmin.save();
-        console.log("SuperAdmin sales updated:", superAdmin.sales);
       }
     }
-    console.log("Sales reports created or updated successfully:", salesReports);
   } catch (error) {
     console.error("Error in createSalesReport:", error);
   }
 };
 
 
+
 export const getAllSalesReports = async (req, res) => {
-    try {
-      const userId = req.userAuth;
-      const employee = await EmployeeMod.findById(userId).populate("superAdminId");
-      let salesReports;
-  
-      if (employee) {
-        const superAdmin = await AdminModel.findById(employee.superAdminId);
-        if (superAdmin) {
-          salesReports = await Sales.find({ _id: { $in: superAdmin.sales } });
-        }
-      } else {
-        const superAdmin = await AdminModel.findById(userId);
-        if (superAdmin) {
-          salesReports = await Sales.find({ _id: { $in: superAdmin.sales } });
-        }
+  try {
+    const userId = req.userAuth;
+    const employee = await EmployeeMod.findById(userId).populate("superAdminId");
+    let salesReports;
+    if (employee) {
+      const superAdmin = await AdminModel.findById(employee.superAdminId);
+      if (superAdmin) {
+        salesReports = await Sales.find({ _id: { $in: superAdmin.sales } }).populate({
+          path: 'products.productId',
+          select: 'name price',
+        });
       }
-      res.status(200).json({
-        data: salesReports,
-        message: "Sales reports retrieved successfully.",
-      });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: "Unable to retrieve sales reports." });
+    } else {
+      const superAdmin = await AdminModel.findById(userId);
+      console.log("superAdmin:", superAdmin);
+      if (superAdmin) {
+        salesReports = await Sales.find({ _id: { $in: superAdmin.sales } }).populate({
+          path: 'products.productId',
+          select: 'name price',
+        });
+      }
     }
-  };
+    res.status(200).json({
+      data: salesReports,
+      message: "Sales reports retrieved successfully.",
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Unable to retrieve sales reports." });
+  }
+};
+
+
 
 
   export const getTotalCategories = async (req, res) => {

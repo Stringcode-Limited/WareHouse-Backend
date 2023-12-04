@@ -5,26 +5,31 @@ const salesSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
-  product: {
-    type: String,
-    required: true,
-  },
-  quantity: {
-    type: Number,
-    required: true,
-  },
-  unitPrice: {
-    type: Number,
-    required: true,
-  },
+  products: [
+    {
+      productId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Product',
+        required: true,
+      },
+      name: {
+        type: String,
+        required: true,
+      },
+      quantity: {
+        type: Number,
+        required: true,
+      },
+    },
+  ],
   total: {
     type: Number,
     required: true,
   },
-  invoice: [{
+  invoice:[{
     type: mongoose.Schema.Types.ObjectId,
     ref: "Invoice"
-  }]
+  }],
 });
 
 const Sales = mongoose.model('Sales', salesSchema);
