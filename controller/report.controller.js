@@ -91,7 +91,6 @@ export const getAllSalesReports = async (req, res) => {
       }
     } else {
       const superAdmin = await AdminModel.findById(userId);
-      console.log("superAdmin:", superAdmin);
       if (superAdmin) {
         salesReports = await Sales.find({ _id: { $in: superAdmin.sales } }).populate({
           path: 'products.productId',
