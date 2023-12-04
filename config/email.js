@@ -23,7 +23,6 @@ export const sendSoldEmail = async (productName, total, superAdminEmail) => {
                   ${productName.map(product => `<li style="margin-bottom: 8px;"><strong>${product.productName}</strong> - Quantity: ${product.quantity}</li>`).join('')}
                 </ul>
                 <p style="margin-top: 20px; font-size: 16px; color: #555;"><strong>Total Amount:</strong> ₦${total}</p>
-                <p style="font-size: 16px; color: #555;">Thank you for your dedication to Jessitel Stores.</p>
                 <p style="font-size: 16px; color: #555;">Best Regards,<br/>Jessitel Stores Admin</p>
               </div>`,
     };
