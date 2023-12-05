@@ -19,7 +19,7 @@
         },
         role: {
             type: String,
-            enum: ['Accountant', 'Salesman', 'Manager']
+            enum: ['Accountant', 'Salesman', 'Manager', 'Cashier']
         },
         lastLogin: {
             type: Date,
