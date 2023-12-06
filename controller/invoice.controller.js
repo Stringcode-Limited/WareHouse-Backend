@@ -23,7 +23,6 @@ export const createInvoice = async (req, res) => {
     }
     const superAdmin = await AdminModel.findById(superAdminId);
     const superAdminEmail = superAdmin.email;
-    // console.log("adminsEmail",superAdminEmail);
     const {
       products,
       customer,
@@ -270,14 +269,15 @@ export const paidInvoice = async (req, res) => {
       superAdminId = employee.superAdminId._id;
     } else {
       superAdminId = userId;
-    await createSalesReport(invoiceId, amountPaid, superAdminId, userId);
+    }
     settledInvoice.transactionHistory.push(transactionEntry);
+    await createSalesReport(invoiceId, amountPaid, superAdminId, userId);
     await settledInvoice.save();
     res.status(200).json({
       data: settledInvoice,
       message: 'Invoice settled successfully.',
     });
-  } }catch (error) {
+   }catch (error) {
     console.error('Error in settleInvoice:', error);
     res.status(500).json({ error: 'Unable to settle the invoice.' });
   }
