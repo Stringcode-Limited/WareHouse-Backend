@@ -74,11 +74,13 @@ export const createInvoice = async (req, res) => {
       newBalance: Number(balance),
       paymentMethod
     };
-    newInvoice.transactionHistory.push(transactionEntry);
-    const invoiceId = newInvoice._id
+    if (amountPaid > 0) {
+      newInvoice.transactionHistory.push(transactionEntry);
+    }
+    const invoiceId = newInvoice._id;
     await newInvoice.save();
     await createSalesReport(invoiceId, amountPaid, superAdminId, userId, res);
-    await sendSoldEmail(products,total,superAdminEmail);
+    await sendSoldEmail(products, total, superAdminEmail);
     existingCustomer.invoice.push(newInvoice._id);
     await existingCustomer.save();
     return res.status(201).json({ message: 'Invoice created successfully.' });
@@ -87,6 +89,7 @@ export const createInvoice = async (req, res) => {
     return res.status(500).json({ message: 'Internal Server Error' });
   }
 };
+
 
 
 export const getAllInvoices = async (req, res) => {
