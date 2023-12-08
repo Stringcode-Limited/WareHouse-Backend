@@ -9,7 +9,7 @@ export const createExpense = async (req, res) => {
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
-    const { title, totalAmount, amountPaid, description, category, datePaid } = req.body;
+    const { title, totalAmount, amountPaid, description, category, datePaid, paymentMethod } = req.body;
     const totalAmountInt = parseInt(totalAmount);
     const amountPaidInt = parseInt(amountPaid);
     if (totalAmountInt < 0 || amountPaidInt < 0) {
@@ -39,6 +39,7 @@ export const createExpense = async (req, res) => {
         {
           amountPaid: amountPaidInt,
           datePaid,
+          paymentMethod,
           newBalance: balance,
         },
       ],
@@ -75,9 +76,6 @@ export const getAllExpenses = async (req, res) => {
     return res.status(401).json({ error: 'Unauthorized' });
   }
   try {
-    // const currentDate = new Date();
-    // const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-    // const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
     let expenses;
     let totalAmountPaidForCurrentMonth = 0;
     const employee = await EmployeeMod.findById(userId).populate('superAdminId');
@@ -86,7 +84,6 @@ export const getAllExpenses = async (req, res) => {
       if (superAdmin) {
         expenses = await ExpenseMod.find({
           _id: { $in: superAdmin.expenses },
-          // datePaid: { $gte: startOfMonth, $lte: endOfMonth },
         });
         totalAmountPaidForCurrentMonth = expenses.reduce(
           (total, expense) => total + (expense.amountPaid || 0),
@@ -98,7 +95,6 @@ export const getAllExpenses = async (req, res) => {
       if (superAdmin) {
         expenses = await ExpenseMod.find({
           _id: { $in: superAdmin.expenses },
-          // datePaid: { $gte: startOfMonth, $lte: endOfMonth },
         });
         totalAmountPaidForCurrentMonth = expenses.reduce(
           (total, expense) => total + (expense.amountPaid || 0),
@@ -106,7 +102,7 @@ export const getAllExpenses = async (req, res) => {
         );
       } else {
         return res.status(404).json({ message: 'User not found.' });
-      }
+      } 
     }
     return res.status(200).json({ expenses, totalAmountPaidForCurrentMonth });
   } catch (error) {
@@ -182,3 +178,4 @@ export const updateExpense = async (req, res) => {
     return res.status(500).json({ message: 'Internal Server Error' });
   }
 };
+

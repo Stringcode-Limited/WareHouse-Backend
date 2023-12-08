@@ -6,6 +6,7 @@ import AdminModel from '../models/admin.model.js';
 import CategoryModel from '../models/category.model.js';
 import SupplierModel from './../models/supplier.model.js';
 import CustomerModel from '../models/customer.model.js';
+import ExpenseMod from './../models/expense.model.js';
 
 export const createSalesReport = async (invoiceId, amountPaid, superAdminId, userId, res) => {
   try {
@@ -108,10 +109,7 @@ export const getAllSalesReports = async (req, res) => {
   }
 };
 
-
-
-
-  export const getTotalCategories = async (req, res) => {
+export const getTotalCategories = async (req, res) => {
     try {
       const userId = req.userAuth;
       if (!userId) {
@@ -507,3 +505,266 @@ function getMonthName(month) {
   ];
   return monthNames[month];
 }
+
+export const getTotalRevenue = async (req, res) => {
+  const userId = req.userAuth;
+  if (!userId) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  try {
+    let totalRevenue = 0;
+    const employee = await EmployeeMod.findById(userId).populate('superAdminId');
+    if (employee) {
+      const superAdminId = employee.superAdminId;
+      const superAdmin = await AdminModel.findById(superAdminId).populate({
+        path: 'customers',
+        populate: { path: 'invoice' }
+      });
+      if (superAdmin) {
+        for (const customer of superAdmin.customers) { 
+          const customerInvoices = customer.invoice;
+          for (const invoice of customerInvoices) {
+            totalRevenue += invoice.amountPaid || 0;
+          }
+        }
+      }
+    } else {
+      const superAdmin = await AdminModel.findById(userId).populate({
+        path: 'customers',
+        populate: { path: 'invoice' }
+      });
+      if (superAdmin) {
+        for (const customer of superAdmin.customers) {
+          const customerInvoices = customer.invoice;
+          for (const invoice of customerInvoices) {
+            totalRevenue += invoice.amountPaid || 0;
+          }
+        }
+      }
+    }
+    res.status(200).json({ totalRevenue });
+  } catch (error) {
+    console.error('Error fetching total revenue:', error);
+    res.status(500).json({ error: 'Unable to fetch total revenue' });
+  }
+};
+
+export const getTotalExpensesForYear = async (req, res) => {
+  const userId = req.userAuth;
+  if (!userId) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  try {
+    let totalExpenses = 0;
+    const employee = await EmployeeMod.findById(userId).populate('superAdminId');
+    if (employee) {
+      const superAdmin = await AdminModel.findById(employee.superAdminId);
+      if (superAdmin) {
+        const expenses = await ExpenseMod.find({
+          _id: { $in: superAdmin.expenses },
+        });
+        expenses.forEach((expense) => {
+          expense.transactionHistory.forEach((transaction) => {
+            const transactionYear = new Date(transaction.datePaid).getFullYear();
+            const currentYear = new Date().getFullYear();
+
+            if (transactionYear === currentYear) {
+              totalExpenses += transaction.amountPaid || 0;
+            }
+          });
+        });
+      }
+    } else {
+      const superAdmin = await AdminModel.findById(userId);
+      if (superAdmin) {
+        const expenses = await ExpenseMod.find({
+          _id: { $in: superAdmin.expenses },
+        });
+        expenses.forEach((expense) => {
+          expense.transactionHistory.forEach((transaction) => {
+            const transactionYear = new Date(transaction.datePaid).getFullYear();
+            const currentYear = new Date().getFullYear();
+            if (transactionYear === currentYear) {
+              totalExpenses += transaction.amountPaid || 0;
+            }
+          });
+        });
+      } else {
+        return res.status(404).json({ message: 'User not found.' });
+      }
+    }
+    return res.status(200).json({ totalExpenses});
+  } catch (error) {
+    console.error('Error:', error);
+    return res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+
+export const getTotalOutstandingInvoicesForYear = async (req, res) => {
+  const userId = req.userAuth;
+  if (!userId) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  try {
+    let outstandingInvoices = 0;
+    const employee = await EmployeeMod.findById(userId).populate('superAdminId');
+    if (employee) {
+      const superAdminId = employee.superAdminId;
+      const superAdmin = await AdminModel.findById(superAdminId).populate({
+        path: 'customers',
+        populate: { path: 'invoice' }
+      });
+
+      if (superAdmin) {
+        for (const customer of superAdmin.customers) {
+          const customerInvoices = customer.invoice;
+          customerInvoices.forEach((invoice) => {
+            const invoiceYear = new Date(invoice.issuedDate).getFullYear();
+            const currentYear = new Date().getFullYear();
+            if (invoiceYear === currentYear && invoice.status !== 'Unpaid') {
+              outstandingInvoices += invoice.balance || 0;
+            }
+          });
+        }
+      }
+    } else {
+      const superAdmin = await AdminModel.findById(userId).populate({
+        path: 'customers',
+        populate: { path: 'invoice' }
+      });
+
+      if (superAdmin) {
+        for (const customer of superAdmin.customers) {
+          const customerInvoices = customer.invoice;
+          customerInvoices.forEach((invoice) => {
+            const invoiceYear = new Date(invoice.issuedDate).getFullYear();
+            const currentYear = new Date().getFullYear();
+            if (invoiceYear === currentYear && invoice.status !== 'Unpaid') {
+              outstandingInvoices += invoice.balance || 0;
+            }
+          });
+        }
+      } else {
+        return res.status(404).json({ message: 'User not found.' });
+      }
+    }
+
+    return res.status(200).json({ outstandingInvoices });
+  } catch (error) {
+    console.error('Error:', error);
+    return res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+export const getMonthlySummary = async (req, res) => {
+  const userId = req.userAuth;
+  if (!userId) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  try {
+    const currentYear = new Date().getFullYear();
+    const startDate = new Date(currentYear, 0, 1);
+    const endDate = new Date(currentYear, 11, 31);
+    const employee = await EmployeeMod.findById(userId).populate('superAdminId');
+    let monthlySummary = Array.from({ length: 12 }, (_, monthIndex) => ({
+      month: monthIndex + 1,
+      totalExpenses: 0,
+      totalRevenue: 0,
+    }));
+    if (employee) {
+      const superAdmin = await AdminModel.findById(employee.superAdminId);
+      if (superAdmin) {
+        const expenses = await ExpenseMod.find({
+          _id: { $in: superAdmin.expenses },
+        });
+        expenses.forEach((expense) => {
+          expense.transactionHistory.forEach((transaction) => {
+            const transactionMonth = new Date(transaction.datePaid).getMonth() + 1;
+            const transactionYear = new Date(transaction.datePaid).getFullYear();
+            if (transactionYear === currentYear) {
+              monthlySummary[transactionMonth - 1].totalExpenses += transaction.amountPaid || 0;
+            }
+          });
+        });
+      }
+    } else {
+      const superAdmin = await AdminModel.findById(userId);
+      if (superAdmin) {
+        const expenses = await ExpenseMod.find({
+          _id: { $in: superAdmin.expenses },
+        });
+        expenses.forEach((expense) => {
+          expense.transactionHistory.forEach((transaction) => {
+            const transactionMonth = new Date(transaction.datePaid).getMonth() + 1;
+            const transactionYear = new Date(transaction.datePaid).getFullYear();
+            if (transactionYear === currentYear) {
+              monthlySummary[transactionMonth - 1].totalExpenses += transaction.amountPaid || 0;
+            }
+          });
+        });
+      } else {
+        return res.status(404).json({ message: 'User not found.' });
+      }
+    }
+    const totalRevenueByMonth = await getTotalRevenueByMonth(userId, startDate, endDate);
+    monthlySummary = monthlySummary.map((item, index) => ({
+      ...item,
+      totalRevenue: totalRevenueByMonth[index].totalRevenue || 0,
+    }));
+    return res.status(200).json({ monthlySummary });
+  } catch (error) {
+    console.error('Error:', error);
+    return res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+const getTotalRevenueByMonth = async (userId, startDate, endDate) => {
+  let totalRevenueByMonth = Array.from({ length: 12 }, (_, index) => ({
+    month: index + 1,
+    totalRevenue: 0,
+  }));
+
+  const employee = await EmployeeMod.findById(userId).populate('superAdminId');
+  if (employee) {
+    const superAdminId = employee.superAdminId;
+    const superAdmin = await AdminModel.findById(superAdminId).populate({
+      path: 'customers',
+      populate: { path: 'invoice' }
+    });
+
+    if (superAdmin) {
+      for (const customer of superAdmin.customers) {
+        const customerInvoices = customer.invoice;
+        for (const invoice of customerInvoices) {
+          const issuedDate = new Date(invoice.issuedDate);
+          if (issuedDate >= startDate && issuedDate <= endDate && invoice.status !== 'Unpaid') {
+            const monthIndex = issuedDate.getMonth();
+            totalRevenueByMonth[monthIndex].totalRevenue += invoice.amountPaid || 0;
+          }
+        }
+      }
+    }
+  } else {
+    const superAdmin = await AdminModel.findById(userId).populate({
+      path: 'customers',
+      populate: { path: 'invoice' }
+    });
+
+    if (superAdmin) {
+      for (const customer of superAdmin.customers) {
+        const customerInvoices = customer.invoice;
+        for (const invoice of customerInvoices) {
+          const issuedDate = new Date(invoice.issuedDate);
+          if (issuedDate >= startDate && issuedDate <= endDate && invoice.status !== 'Unpaid') {
+            const monthIndex = issuedDate.getMonth();
+            totalRevenueByMonth[monthIndex].totalRevenue += invoice.amountPaid || 0;
+          }
+        }
+      }
+    }
+  }
+
+  return totalRevenueByMonth;
+};
+

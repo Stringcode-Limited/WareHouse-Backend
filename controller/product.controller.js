@@ -622,3 +622,53 @@ export const checkExpiringProducts = async (req, res) => {
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+export const getProductsLessThanQuantity = async (req, res) => {
+  const userId = req.userAuth;
+  if (!userId) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  try {
+    const { quantity } = req.body;
+    if (typeof quantity !== 'number' || quantity < 0) {
+      return res.status(400).json({ error: 'Invalid quantity value' });
+    }
+    let products = [];
+    const employee = await EmployeeMod.findById(userId).populate('superAdminId');
+    if (employee) {
+      const superAdmin = await AdminModel.findById(employee.superAdminId).populate('products');
+      if (superAdmin) {
+        products = superAdmin.products
+          .map((product) => {
+            if (product.quantity === 0) {
+              product.availability = 'Out-of-Stock';
+            } else if (product.availability === 'Out-of-Stock') {
+              product.quantity = 0;
+            }
+            return product;
+          })
+          .filter((product) => product.quantity < quantity && product.availability === 'Available');
+      }
+    } else {
+      const superAdmin = await AdminModel.findById(userId).populate('products');
+      if (superAdmin) {
+        products = superAdmin.products
+          .map((product) => {
+            if (product.quantity === 0) {
+              product.availability = 'Out-of-Stock';
+            } else if (product.availability === 'Out-of-Stock') {
+              product.quantity = 0;
+            }
+            return product;
+          })
+          .filter((product) => product.quantity < quantity && product.availability === 'Available');
+      } else {
+        return res.status(404).json({ message: 'User not found.' });
+      }
+    }
+    return res.status(200).json({ products });
+  } catch (error) {
+    console.error('Error:', error);
+    return res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
