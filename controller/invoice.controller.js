@@ -57,7 +57,6 @@ export const createInvoice = async (req, res) => {
     if (balance < total) {
       status = 'Partially Paid';
     }
-    let existingCustomer = await CustomerModel.findOne({ name: customer });
     const newInvoice = new InvoiceModel({
       products,
       status,
@@ -81,15 +80,14 @@ export const createInvoice = async (req, res) => {
     await newInvoice.save();
     await createSalesReport(invoiceId, amountPaid, superAdminId, userId, res);
     await sendSoldEmail(products, total, superAdminEmail);
-    existingCustomer.invoice.push(newInvoice._id);
-    await existingCustomer.save();
+    superAdmin.invoices.push(invoiceId);
+    await superAdmin.save();
     return res.status(201).json({ message: 'Invoice created successfully.' });
   } catch (error) {
     console.error('Error:', error);
     return res.status(500).json({ message: 'Internal Server Error' });
   }
 };
-
 
 
 export const getAllInvoices = async (req, res) => {
@@ -100,36 +98,27 @@ export const getAllInvoices = async (req, res) => {
   try {
     let invoices = [];
     const employee = await EmployeeMod.findById(userId).populate('superAdminId');
-    if (employee) {
+    if (employee && employee.superAdminId) {
       const superAdminId = employee.superAdminId;
-      const superAdmin = await AdminModel.findById(superAdminId).populate({
-        path: 'customers',
-        populate: { path: 'invoice' }
-      });
+      const superAdmin = await AdminModel.findById(superAdminId).populate('invoices');
       if (superAdmin) {
-        for (const customer of superAdmin.customers) { 
-          const customerInvoices = customer.invoice;
-          invoices.push(...customerInvoices);
-        }
+        invoices = superAdmin.invoices || [];
       }
     } else {
-      const superAdmin = await AdminModel.findById(userId).populate({
-        path: 'customers',
-        populate: { path: 'invoice' }
-      });
+      const superAdmin = await AdminModel.findById(userId).populate('invoices');
       if (superAdmin) {
-        for (const customer of superAdmin.customers) {
-          const customerInvoices = customer.invoice;
-          invoices.push(...customerInvoices);
-        }
+        invoices = superAdmin.invoices || [];
+      } else {
+        return res.status(404).json({ message: 'SuperAdmin not found.' });
       }
     }
     res.status(200).json(invoices);
   } catch (error) {
-    console.error('Error fetching all customer invoices:', error);
-    res.status(500).json({ error: 'Unable to fetch customer invoices' });
+    console.error('Error fetching all invoices:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
 
 
 export const getInvoiceItems = async (req, res) => {
@@ -309,24 +298,14 @@ export const deleteInvoice = async (req, res) => {
     if (!invoice) {
       return res.status(404).json({ error: 'Invoice not found' });
     }
-    const customerName = invoice.customer;
-    const customer = await CustomerModel.findOne({ name: customerName });
-    if (!customer) {
-      return res.status(404).json({ error: 'Customer not found' });
-    }
-    const customerId = customer._id;
-    if (!superAdmin.customers.includes(customerId.toString())) {
-      return res.status(403).json({ error: 'Unauthorized access' });
-    }
-    const invoiceIndex = customer.invoice.indexOf(invoiceId);
+    const invoiceIndex = superAdmin.invoices.indexOf(invoiceId);
     if (invoiceIndex !== -1) {
-      customer.invoice.splice(invoiceIndex, 1);
-      await customer.save();
-      superAdmin.deletedInvoices.push(invoice);
+      superAdmin.invoices.splice(invoiceIndex, 1);
+      superAdmin.deletedInvoices.push(invoiceId);
       await superAdmin.save();
       return res.status(200).json({ message: 'Invoice deleted successfully' });
     } else {
-      return res.status(404).json({ error: 'Invoice not found in customer\'s invoices' });
+      return res.status(404).json({ error: 'Invoice not found in SuperAdmin\'s invoices' });
     }
   } catch (error) {
     console.error(error);

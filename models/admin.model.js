@@ -64,6 +64,12 @@ const adminSchema = new mongoose.Schema({
       ref: "Discount"
     }
   ],
+  invoices: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Invoice"
+    }
+  ],
   expenses: [
     {
       type: mongoose.Schema.Types.ObjectId,
