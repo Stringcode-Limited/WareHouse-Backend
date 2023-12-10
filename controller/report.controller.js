@@ -859,3 +859,21 @@ export const getAllDeletedCustomers = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+export const getAllDeletedItems = async (req, res) => {
+  const userId = req.userAuth;
+  if (!userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  try {
+    const superAdmin = await AdminModel.findById(userId).populate("deletedItems");
+    if (!superAdmin) {
+      return res.status(404).json({ message: "SuperAdmin not found." });
+    }
+    const deletedItems = superAdmin.deletedItems;
+    res.status(200).json({ deletedItems });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};

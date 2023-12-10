@@ -1,7 +1,7 @@
 import express  from "express";
 import { adminLogin, setSuperAdmin } from "../controller/personnel.controller.js";
 import { loggedIn } from './../middleware/loginAccess.js';
-import { getAllDeletedCategories, getAllDeletedCustomers, getAllDeletedEmployees, getAllDeletedInvoices, getAllDeletedSuppliers } from './../controller/report.controller.js';
+import { getAllDeletedCategories, getAllDeletedCustomers, getAllDeletedEmployees, getAllDeletedInvoices, getAllDeletedSuppliers, getAllDeletedItems } from './../controller/report.controller.js';
 
 const adminRouter = express.Router();
 
@@ -18,5 +18,8 @@ adminRouter.get('/del-invoice', loggedIn, getAllDeletedInvoices);
 adminRouter.get('/del-categories', loggedIn, getAllDeletedCategories);
 
 adminRouter.get('/del-supplier', loggedIn, getAllDeletedSuppliers);
+
+adminRouter.get('/del-items', loggedIn, getAllDeletedItems);
+
 
 export default adminRouter;

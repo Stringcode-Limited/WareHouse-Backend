@@ -203,7 +203,6 @@ export const createProduct = async (req, res) => {
     if (existingProduct) {
       if (existingProduct.availability !== "Available") {
         const superAdminId = existingProduct.belongsTo;
-
         const newProduct = new ProductModel({
           name,
           description,
@@ -502,10 +501,11 @@ export const updateProduct = async (req, res) => {
 export const deleteProduct = async (req, res) => {
   const productId = req.params.productId;
   const userId = req.userAuth;
-  if (!userId) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
+  
   try {
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
     const employee = await EmployeeMod.findById(userId).populate('superAdminId');
     let superAdminId;
     if (employee && employee.superAdminId) {
@@ -521,19 +521,16 @@ export const deleteProduct = async (req, res) => {
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
-    const productIndex = superAdmin.products.indexOf(productId);
-    if (productIndex !== -1) {
-      superAdmin.products.splice(productIndex, 1);
-    }
+    await product.save();
     superAdmin.deletedItems.push(productId);
     await superAdmin.save();
-    await ProductModel.findByIdAndDelete(productId);
     return res.status(200).json({ message: "Product deleted successfully" });
   } catch (error) {
     console.error("Error:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
 
 
 export const checkExpiringProducts = async (req, res) => {
