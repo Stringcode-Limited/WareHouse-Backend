@@ -274,7 +274,7 @@ export const paidInvoice = async (req, res) => {
       superAdminId = userId;
     }
     settledInvoice.transactionHistory.push(transactionEntry);
-    await createSalesReport(invoiceId, amountPaid, superAdminId, userId);
+    await createSalesReport(invoiceId, amountPaid, superAdminId, userId, res);
     await settledInvoice.save();
     res.status(200).json({
       data: settledInvoice,

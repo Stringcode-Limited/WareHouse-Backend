@@ -624,7 +624,6 @@ export const updateMarketSale = async (req, res) => {
     if (totalQuantity > marketSale.quantity) {
       return res.status(400).json({ error: "Inaccurate quantity input." });
     }
-
     const totalSoldQuantity = Number(marketSale.quantityReturned) + Number(quantitySold);
     const totalReturnedQuantity = Number(marketSale.quantitySold) + Number(quantityReturned);
     if (totalSoldQuantity > marketSale.quantity || totalReturnedQuantity > marketSale.quantity) {
@@ -632,7 +631,7 @@ export const updateMarketSale = async (req, res) => {
     }
     marketSale.quantitySold += Number(quantitySold);
     marketSale.amountMade = Number(marketSale.quantitySold) * Number(marketSale.unitPrice);
-    marketSale.amountOwed = Number(marketSale.expectedProfit) - Number(marketSale.amountMade);
+    marketSale.amountOwed = (marketSale.quantity - totalQuantity) * Number(marketSale.unitPrice);
     if (marketSale.quantity > 0) {
       marketSale.sellPercentage = Math.round((Number(marketSale.quantitySold) / Number(marketSale.quantity)) * 100);
     } else {
