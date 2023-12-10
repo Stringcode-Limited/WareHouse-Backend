@@ -237,8 +237,8 @@ export const transactionHistory = async (req, res) => {
     return res.status(500).json({ error: 'Internal Server Error' });
   }
  }
-
-export const deleteSupplier = async (req, res) => {
+ 
+ export const deleteSupplier = async (req, res) => {
   const userId = req.userAuth;
   if (!userId) {
     return res.status(401).json({ error: "Unauthorized" });
@@ -261,7 +261,6 @@ export const deleteSupplier = async (req, res) => {
       superAdmin.suppliers.splice(supplierIndex, 1);
       superAdmin.deletedSuppliers.push(supplierId);
       await superAdmin.save();
-      await SupplierModel.findByIdAndDelete(supplierId);
       return res.status(200).json({ message: "Supplier deleted successfully" });
     } else {
       return res.status(404).json({ error: "Supplier not found in SuperAdmin's suppliers" });
@@ -271,3 +270,4 @@ export const deleteSupplier = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+

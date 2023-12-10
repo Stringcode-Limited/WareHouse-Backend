@@ -768,3 +768,94 @@ const getTotalRevenueByMonth = async (userId, startDate, endDate) => {
   return totalRevenueByMonth;
 };
 
+
+export const getAllDeletedSuppliers = async (req, res) => {
+  const userId = req.userAuth;
+  if (!userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  try {
+    const superAdmin = await AdminModel.findById(userId).populate("deletedSuppliers");
+    if (!superAdmin) {
+      return res.status(404).json({ message: "SuperAdmin not found." });
+    }
+    const deletedSuppliers = superAdmin.deletedSuppliers;
+    res.status(200).json({ deletedSuppliers });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+
+export const getAllDeletedInvoices = async (req, res) => {
+  const userId = req.userAuth;
+  if (!userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  try {
+    const superAdmin = await AdminModel.findById(userId).populate("deletedInvoices");
+    if (!superAdmin) {
+      return res.status(404).json({ message: "SuperAdmin not found." });
+    }
+    const deletedInvoices = superAdmin.deletedInvoices;
+    res.status(200).json({ deletedInvoices });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const getAllDeletedCategories = async (req, res) => {
+  const userId = req.userAuth;
+  if (!userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  try {
+    const superAdmin = await AdminModel.findById(userId).populate("deletedCategory");
+    if (!superAdmin) {
+      return res.status(404).json({ message: "SuperAdmin not found." });
+    }
+    const deletedCategories = superAdmin.deletedCategory;
+    res.status(200).json({ deletedCategories });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const getAllDeletedEmployees = async (req, res) => {
+  const userId = req.userAuth;
+  if (!userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  try {
+    const superAdmin = await AdminModel.findById(userId).populate("deletedStaffs");
+    if (!superAdmin) {
+      return res.status(404).json({ message: "SuperAdmin not found." });
+    }
+    const deletedEmployees = superAdmin.deletedStaffs;
+    res.status(200).json({ deletedEmployees });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const getAllDeletedCustomers = async (req, res) => {
+  const userId = req.userAuth;
+  if (!userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  try {
+    const superAdmin = await AdminModel.findById(userId).populate("deletedCustomers");
+    if (!superAdmin) {
+      return res.status(404).json({ message: "SuperAdmin not found." });
+    }
+    const deletedCustomers = superAdmin.deletedCustomers;
+    res.status(200).json({ deletedCustomers });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};

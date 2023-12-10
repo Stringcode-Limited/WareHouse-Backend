@@ -168,7 +168,6 @@ export const deleteCategory = async (req, res) => {
       superAdmin.category.splice(categoryIndex, 1);
       superAdmin.deletedCategory.push(categoryId);
       await superAdmin.save();
-      await CategoryModel.findByIdAndDelete(categoryId);
       return res.status(200).json({ message: "Category deleted successfully" });
     } else {
       return res.status(404).json({ error: "Category not found in SuperAdmin's categories" });
@@ -178,6 +177,7 @@ export const deleteCategory = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 
 
@@ -202,7 +202,6 @@ export const createProduct = async (req, res) => {
     });
     if (existingProduct) {
       if (existingProduct.availability !== "Available") {
-        // If the existing product is not 'Available', create a new one
         const superAdminId = existingProduct.belongsTo;
 
         const newProduct = new ProductModel({
