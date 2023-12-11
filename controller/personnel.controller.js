@@ -631,14 +631,14 @@ export const updateMarketSale = async (req, res) => {
     }
     marketSale.quantitySold += Number(quantitySold);
     marketSale.amountMade = Number(marketSale.quantitySold) * Number(marketSale.unitPrice);
-    marketSale.amountOwed = (marketSale.quantity - totalQuantity) * Number(marketSale.unitPrice);
+    marketSale.amountOwed = Number(Number(marketSale.quantity) - Number(totalQuantity)) * Number(marketSale.unitPrice);
     if (marketSale.quantity > 0) {
       marketSale.sellPercentage = Math.round((Number(marketSale.quantitySold) / Number(marketSale.quantity)) * 100);
     } else {
       marketSale.sellPercentage = 0;
     }
     marketSale.quantityReturned += Number(quantityReturned);
-    marketSale.amountOwed = marketSale.quantity === totalReturnedQuantity ? 0 : Number(marketSale.amountOwed) - Number(quantityReturned * marketSale.unitPrice);
+    // marketSale.amountOwed = marketSale.quantity === totalReturnedQuantity ? 0 : Number(marketSale.amountOwed) - Number(quantityReturned * marketSale.unitPrice);
     await user.save();
     return res.status(200).json({ message: "Market sale updated successfully." });
   } catch (error) {
