@@ -9,9 +9,6 @@ export const createSupplier = async (req, res) => {
   }
   try {
     const { name, contactInformation } = req.body;
-    if (!contactInformation || !contactInformation.email) {
-      return res.status(400).json({ error: "Invalid contact information" });
-    }
     const newSupplier = new SupplierModel({
       name,
       contactInformation,
