@@ -23,6 +23,11 @@ const productSchema = new mongoose.Schema({
     category: {
         type: String,
     },
+    deletedStatus: {
+        type: String,
+        enum: ['Deleted','Not Deleted'],
+        default: 'Not Deleted'
+    },
     availability: {
         type: String,
         enum: ["Available","Out-of-Stock", "Expired", "Dead Stock"]

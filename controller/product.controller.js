@@ -167,6 +167,11 @@ export const deleteCategory = async (req, res) => {
     if (categoryIndex !== -1) {
       superAdmin.category.splice(categoryIndex, 1);
       superAdmin.deletedCategory.push(categoryId);
+      const category = await CategoryModel.findOne({ _id: categoryId });
+      if (category) {
+        category.deletedStatus = 'Deleted';
+        await category.save();
+      }
       await superAdmin.save();
       return res.status(200).json({ message: "Category deleted successfully" });
     } else {
@@ -177,6 +182,7 @@ export const deleteCategory = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 
 
@@ -277,7 +283,6 @@ export const getAllProducts = async (req, res) => {
   }
   try {
     let products = [];
-
     const employee = await EmployeeMod.findById(userId).populate(
       "superAdminId"
     );
@@ -288,17 +293,21 @@ export const getAllProducts = async (req, res) => {
       if (superAdmin) {
         products = superAdmin.products
           .map((product) => {
-            if (product.quantity === 0) {
-              product.availability = "Out-of-Stock";
-            } else if (product.availability === "Out-of-Stock") {
-              product.quantity = 0;
+            if (product.deletedStatus !== 'Deleted') {
+              if (product.quantity === 0) {
+                product.availability = "Out-of-Stock";
+              } else if (product.availability === "Out-of-Stock") {
+                product.quantity = 0;
+              }
+              return product;
             }
-            return product;
+            return null; 
           })
           .filter(
             (product) =>
-              product.availability === "Available" ||
-              product.availability === "Out-of-Stock"
+              product && 
+              (product.availability === "Available" ||
+                product.availability === "Out-of-Stock")
           );
       }
     } else {
@@ -306,19 +315,23 @@ export const getAllProducts = async (req, res) => {
       if (superAdmin) {
         products = superAdmin.products
           .map((product) => {
-            if (product.quantity === 0) {
-              product.availability = "Out-of-Stock";
-            } else if (product.availability === "Out-of-Stock") {
-              product.quantity = 0;
+            if (product.deletedStatus !== 'Deleted') {
+              if (product.quantity === 0) {
+                product.availability = "Out-of-Stock";
+              } else if (product.availability === "Out-of-Stock") {
+                product.quantity = 0;
+              }
+              return product;
             }
-            return product;
+            return null;
           })
           .filter(
             (product) =>
-              product.availability === "Available" ||
-              product.availability === "Out-of-Stock"
+              product &&
+              (product.availability === "Available" ||
+                product.availability === "Out-of-Stock")
           );
-      } 
+      }
     }
     return res.status(200).json({ products });
   } catch (error) {
@@ -326,6 +339,7 @@ export const getAllProducts = async (req, res) => {
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
 
 export const getProductByName = async (req, res) => {
   try {
@@ -501,7 +515,6 @@ export const updateProduct = async (req, res) => {
 export const deleteProduct = async (req, res) => {
   const productId = req.params.productId;
   const userId = req.userAuth;
-  
   try {
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -521,6 +534,7 @@ export const deleteProduct = async (req, res) => {
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
+    product.deletedStatus = "Deleted";
     await product.save();
     superAdmin.deletedItems.push(productId);
     await superAdmin.save();
@@ -530,6 +544,7 @@ export const deleteProduct = async (req, res) => {
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
 
 
 
