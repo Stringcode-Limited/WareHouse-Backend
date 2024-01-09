@@ -512,32 +512,33 @@ export const getTotalRevenue = async (req, res) => {
     return res.status(401).json({ error: 'Unauthorized' });
   }
   try {
+    const currentYear = new Date().getFullYear();
     let totalRevenue = 0;
+
     const employee = await EmployeeMod.findById(userId).populate('superAdminId');
+    let superAdminId;
+
     if (employee) {
-      const superAdminId = employee.superAdminId;
-      const superAdmin = await AdminModel.findById(superAdminId).populate({
-        path: 'customers',
-        populate: { path: 'invoice' }
-      });
-      if (superAdmin) {
-        for (const customer of superAdmin.customers) { 
-          const customerInvoices = customer.invoice;
-          for (const invoice of customerInvoices) {
-            totalRevenue += invoice.amountPaid || 0;
-          }
-        }
-      }
+      superAdminId = employee.superAdminId;
     } else {
-      const superAdmin = await AdminModel.findById(userId).populate({
-        path: 'customers',
-        populate: { path: 'invoice' }
-      });
-      if (superAdmin) {
-        for (const customer of superAdmin.customers) {
-          const customerInvoices = customer.invoice;
-          for (const invoice of customerInvoices) {
-            totalRevenue += invoice.amountPaid || 0;
+      superAdminId = userId;
+    }
+
+    const superAdmin = await AdminModel.findById(superAdminId).populate({
+      path: 'customers',
+      populate: { path: 'invoice' }
+    });
+
+    if (superAdmin) {
+
+      for (const customer of superAdmin.customers) {
+        const customerInvoices = customer.invoice;
+        for (const invoice of customerInvoices) {
+          for (const transaction of invoice.transactionHistory) {
+            const yearOfPayment = new Date(transaction.datePaid).getFullYear();
+            if (yearOfPayment === currentYear) {
+              totalRevenue += transaction.amountPaid || 0;
+            }
           }
         }
       }
@@ -548,6 +549,8 @@ export const getTotalRevenue = async (req, res) => {
     res.status(500).json({ error: 'Unable to fetch total revenue' });
   }
 };
+
+
 
 export const getTotalExpensesForYear = async (req, res) => {
   const userId = req.userAuth;
@@ -737,10 +740,12 @@ const getTotalRevenueByMonth = async (userId, startDate, endDate) => {
       for (const customer of superAdmin.customers) {
         const customerInvoices = customer.invoice;
         for (const invoice of customerInvoices) {
-          const issuedDate = new Date(invoice.issuedDate);
-          if (issuedDate >= startDate && issuedDate <= endDate && invoice.status !== 'Unpaid') {
-            const monthIndex = issuedDate.getMonth();
-            totalRevenueByMonth[monthIndex].totalRevenue += invoice.amountPaid || 0;
+          for (const transaction of invoice.transactionHistory) {
+            const datePaid = new Date(transaction.datePaid);
+            if (datePaid >= startDate && datePaid <= endDate && invoice.status !== 'Unpaid') {
+              const monthIndex = datePaid.getMonth();
+              totalRevenueByMonth[monthIndex].totalRevenue += transaction.amountPaid || 0;
+            }
           }
         }
       }
@@ -755,10 +760,12 @@ const getTotalRevenueByMonth = async (userId, startDate, endDate) => {
       for (const customer of superAdmin.customers) {
         const customerInvoices = customer.invoice;
         for (const invoice of customerInvoices) {
-          const issuedDate = new Date(invoice.issuedDate);
-          if (issuedDate >= startDate && issuedDate <= endDate && invoice.status !== 'Unpaid') {
-            const monthIndex = issuedDate.getMonth();
-            totalRevenueByMonth[monthIndex].totalRevenue += invoice.amountPaid || 0;
+          for (const transaction of invoice.transactionHistory) {
+            const datePaid = new Date(transaction.datePaid);
+            if (datePaid >= startDate && datePaid <= endDate && invoice.status !== 'Unpaid') {
+              const monthIndex = datePaid.getMonth();
+              totalRevenueByMonth[monthIndex].totalRevenue += transaction.amountPaid || 0;
+            }
           }
         }
       }

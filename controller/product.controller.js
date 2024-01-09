@@ -11,41 +11,47 @@ export const createCategory = async (req, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
     const { name } = req.body;
-    const categoryExists = await CategoryModel.findOne({ name });
-    if (categoryExists) {
-      return res.status(400).json({ error: "Category already exists." });
-    }
-    const employee = await EmployeeMod.findById(userId).populate(
-      "superAdminId"
-    );
+    const employee = await EmployeeMod.findById(userId).populate('superAdminId');
     if (employee) {
-      const superAdmin = await AdminModel.findById(employee.superAdminId);
+      const superAdmin = await AdminModel.findById(employee.superAdminId).populate('category');
       if (superAdmin) {
+        const existingCategory = superAdmin.category.find(
+          (existingCategory) =>
+            existingCategory.name === name && existingCategory.deletedStatus !== 'Deleted'
+        );
+        if (existingCategory) {
+          return res.status(400).json({ error: "Category already exists." });
+        }
         const newCategory = new CategoryModel({ name });
         await newCategory.save();
         superAdmin.category.push(newCategory._id);
         await superAdmin.save();
-        return res
-          .status(201)
-          .json({ message: "Category created successfully." });
+        return res.status(201).json({ message: "Category created successfully." });
       }
     } else {
-      const superAdmin = await AdminModel.findById(userId);
+      const superAdmin = await AdminModel.findById(userId).populate('category');
       if (superAdmin) {
+        const existingCategory = superAdmin.category.find(
+          (existingCategory) =>
+            existingCategory.name === name && existingCategory.deletedStatus !== 'Deleted'
+        );
+        if (existingCategory) {
+          return res.status(400).json({ error: "Category already exists." });
+        }
         const newCategory = new CategoryModel({ name });
         await newCategory.save();
         superAdmin.category.push(newCategory._id);
         await superAdmin.save();
-        return res
-          .status(201)
-          .json({ message: "Category created successfully." });
+        return res.status(201).json({ message: "Category created successfully." });
       }
     }
+    return res.status(500).json({ message: "Internal Server Error" });
   } catch (error) {
     console.error("Error:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
 
 export const getAllCategories = async (req, res) => {
   try {
@@ -570,9 +576,7 @@ export const checkExpiringProducts = async (req, res) => {
       today.getMonth(),
       today.getDate() + 10
     );
-
     let expiringProducts = [];
-
     const employee = await EmployeeMod.findById(userId).populate(
       "superAdminId"
     );
@@ -581,30 +585,34 @@ export const checkExpiringProducts = async (req, res) => {
         employee.superAdminId
       ).populate("products");
       if (superAdmin) {
-        expiringProducts = superAdmin.products.filter((product) => {
-          return (
-            product.availability === "Available" &&
-            ((new Date(product.expirationDate) <= oneMonthLater &&
-              new Date(product.expirationDate) > twentyDaysLater) ||
-              (new Date(product.expirationDate) <= twentyDaysLater &&
-                new Date(product.expirationDate) > tenDaysLater) ||
-              (product.quantity <= 10 && product.quantity > 0))
-          );
-        });
+        expiringProducts = superAdmin.products
+          .filter((product) => product.deletedStatus !== 'Deleted')
+          .filter((product) => {
+            return (
+              product.availability === "Available" &&
+              ((new Date(product.expirationDate) <= oneMonthLater &&
+                new Date(product.expirationDate) > twentyDaysLater) ||
+                (new Date(product.expirationDate) <= twentyDaysLater &&
+                  new Date(product.expirationDate) > tenDaysLater) ||
+                (product.quantity <= 10 && product.quantity > 0))
+            );
+          });
       }
     } else {
       const superAdmin = await AdminModel.findById(userId).populate("products");
       if (superAdmin) {
-        expiringProducts = superAdmin.products.filter((product) => {
-          return (
-            product.availability === "Available" &&
-            ((new Date(product.expirationDate) <= oneMonthLater &&
-              new Date(product.expirationDate) > twentyDaysLater) ||
-              (new Date(product.expirationDate) <= twentyDaysLater &&
-                new Date(product.expirationDate) > tenDaysLater) ||
-              (product.quantity <= 10 && product.quantity > 0))
-          );
-        });
+        expiringProducts = superAdmin.products
+          .filter((product) => product.deletedStatus !== 'Deleted')
+          .filter((product) => {
+            return (
+              product.availability === "Available" &&
+              ((new Date(product.expirationDate) <= oneMonthLater &&
+                new Date(product.expirationDate) > twentyDaysLater) ||
+                (new Date(product.expirationDate) <= twentyDaysLater &&
+                  new Date(product.expirationDate) > tenDaysLater) ||
+                (product.quantity <= 10 && product.quantity > 0))
+            );
+          });
       }
     }
     const messages = expiringProducts.map((product) => {
@@ -626,13 +634,13 @@ export const checkExpiringProducts = async (req, res) => {
       }
       return message;
     });
-
     return res.status(200).json({ message: messages });
   } catch (error) {
     console.error("Error:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
 
 export const getProductsLessThanQuantity = async (req, res) => {
   const userId = req.userAuth;

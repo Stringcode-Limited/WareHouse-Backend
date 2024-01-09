@@ -19,6 +19,11 @@ const customerSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Invoice"
   }],
+  deletedStatus: {
+    type: String,
+    enum: ['Deleted','Not Deleted'],
+    default: 'Not Deleted'
+},
 });
 
 const CustomerModel = mongoose.model("Customer", customerSchema);
